@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - playground/**
+      - scripts/sync-playground-captures.sh
+      - scripts/generate_playground.py
+      - src/**
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -22,11 +25,37 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: playground
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: playground/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install agentid (for capture sync)
+        working-directory: ${{ github.workspace }}
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -e .
+      - name: sync real CLI captures
+        working-directory: ${{ github.workspace }}
+        run: |
+          . .venv/bin/activate
+          bash scripts/sync-playground-captures.sh
+      - name: build playground
+        run: npm ci && npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: playground
+          path: playground/dist
       - id: deployment
         uses: actions/deploy-pages@v4

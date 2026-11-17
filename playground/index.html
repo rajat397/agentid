@@ -1,120 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>agentid — a reference implementation for agent identity</title>
-<meta name="description" content="Identity, guardrails, reliability and traceability for software agents. A real, runnable reference implementation — not a slide deck.">
-<style>
-  :root {
-    --bg: #0d1117; --panel: #161b22; --panel-2: #1c2129;
-    --ink: #e6edf3; --dim: #8b949e; --line: #30363d;
-    --green: #3fb950; --red: #f85149; --amber: #d29922; --blue: #58a6ff; --accent: #7ee787;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-  code, pre { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; }
-  a { color: var(--blue); }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 1.25rem; }
-  header {
-    border-bottom: 1px solid var(--line); padding: 1.1rem 0;
-    position: sticky; top: 0; background: rgba(13,17,23,.92); backdrop-filter: blur(8px); z-index: 10;
-  }
-  .hbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-  .logo { font-weight: 700; font-size: 1.05rem; letter-spacing: .02em; }
-  .logo span { color: var(--accent); }
-  nav { display: flex; gap: 1.25rem; font-size: .9rem; }
-  nav a { color: var(--dim); text-decoration: none; }
-  nav a:hover { color: var(--ink); }
-  .hero { padding: 3.5rem 0 2.5rem; border-bottom: 1px solid var(--line); }
-  h1 { font-size: 2.4rem; line-height: 1.15; margin: 0 0 1rem; letter-spacing: -0.02em; }
-  h1 .g { color: var(--accent); }
-  .sub { font-size: 1.12rem; color: var(--dim); max-width: 46ch; }
-  .pillrow { margin: 1.5rem 0 0; display: flex; gap: .6rem; flex-wrap: wrap; }
-  .pill { border: 1px solid var(--line); border-radius: 999px; padding: .25rem .8rem; font-size: .8rem; color: var(--dim); background: var(--panel); }
-  .pill.live { border-color: var(--green); color: var(--green); }
-  .banner {
-    margin: 2rem 0; border: 1px solid var(--amber); border-left: 4px solid var(--amber);
-    background: rgba(210,153,34,.07); border-radius: 8px; padding: .9rem 1.1rem; font-size: .92rem; color: var(--ink);
-  }
-  .banner b { color: var(--amber); }
-  h2 { font-size: 1.5rem; margin: 2.5rem 0 1rem; padding-top: 1rem; letter-spacing: -0.01em; }
-  h3 { font-size: 1.1rem; margin: 1.75rem 0 .6rem; }
-  figure {
-    margin: 1rem 0 0; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 10px; overflow: hidden;
-  }
-  figcaption {
-    display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap;
-    padding: .55rem .9rem; border-bottom: 1px solid var(--line);
-    font-size: .78rem; color: var(--dim); background: var(--panel-2);
-  }
-  figcaption code { color: var(--accent); }
-  pre { margin: 0; padding: 1rem; overflow-x: auto; font-size: .78rem; line-height: 1.55; }
-  .c-dim { color: var(--dim); } .c-green { color: var(--green); } .c-red { color: var(--red); }
-  .c-amber { color: var(--amber); } .c-blue { color: var(--blue); }
-  table { width: 100%; border-collapse: collapse; font-size: .92rem; margin: 1rem 0; }
-  th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--line); }
-  th { color: var(--dim); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.2rem; }
-  .card h3 { margin-top: 0; }
-  .card p { color: var(--dim); margin: .3rem 0; font-size: .94rem; }
-  footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--dim); font-size: .85rem; }
-  footer a { color: var(--blue); }
-  .btnrow { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.5rem; }
-  .btn { display: inline-block; padding: .6rem 1.1rem; border-radius: 8px; text-decoration: none;
-         border: 1px solid var(--line); color: var(--ink); background: var(--panel); font-size: .92rem; }
-  .btn.primary { background: var(--green); border-color: var(--green); color: #062d16; font-weight: 700; }
-  .btn:hover { border-color: var(--dim); }
-</style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agentid — identity, guardrails, reliability and traceability for software agents</title>
+<meta name="description" content="A reference implementation of agent identity for the OTel/MCP era — scoped delegations, tamper-evident receipts, and decisions you can re-derive. Runnable, MIT-licensed." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🛡️</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
 
-<header>
-  <div class="wrap hbar">
-    <div class="logo">agent<span>id</span></div>
+<header id="site-header">
+  <div class="hbar">
+    <div class="logo">agent<em>id</em></div>
     <nav>
+      <a href="#explainer">Explainer</a>
       <a href="#demo">Demo</a>
-      <a href="#erasure">Erasure</a>
+      <a href="#try-it">Try it</a>
       <a href="#evidence">Evidence</a>
-      <a href="#profile">Profile</a>
-      <a href="https://github.com/rajat397/agentid">GitHub ↗</a>
     </nav>
+    <a class="gh-btn" href="https://github.com/rajat397/agentid">GitHub ↗</a>
   </div>
 </header>
 
-<div class="wrap">
-
-  <section class="hero">
-    <h1>Identity for <span class="g">software agents</span>.</h1>
-    <p class="sub">
-      One question governs every agent system: <em>who authorized this, under what authority, and can you prove it three years later?</em>
-      agentid is a reference implementation that makes that question answerable — with signed delegations,
-      hash-chained receipts, and a validation profile that travels with the decision.
-    </p>
-    <div class="pillrow">
-      <span class="pill live">● runnable today</span>
-      <span class="pill">MIT · zero heavy deps</span>
-      <span class="pill">NIST-aligned</span>
-      <span class="pill">experimental — not production</span>
+<!-- ═══ HERO ═══ -->
+<section class="hero" style="border-top:none">
+  <div>
+    <div class="eyebrow"><span class="dot"></span> Experimental · MIT · v0.1.0</div>
+    <h1><span class="line">An agent acted.</span><span class="line"><span class="grad">Who said it could?</span></span></h1>
+    <p class="sub">An agent holds a valid token, calls a tool, posts a purchase — and when security asks <em>which agent, under whose authority, and what exactly was allowed</em>, nobody can answer. agentid makes the answer structural, not forensic.</p>
+    <div class="hero-ctas">
+      <a class="btn primary" href="#try-it">Try the validator ↓</a>
+      <a class="btn" href="#explainer">See how it works</a>
     </div>
-    <div class="btnrow">
-      <a class="btn primary" href="#demo">See it run ↓</a>
-      <a class="btn" href="https://github.com/rajat397/agentid">Get the code</a>
+    <div class="hero-meta mono">
+      <span><b>13</b> executable tests</span>
+      <span><b>1</b> dependency</span>
+      <span><b>0</b> hosted services</span>
     </div>
-    <div class="banner"><b>Honest status:</b> this is an experimental reference implementation, not a finished product. It exists so the rest of the ecosystem can build against a real artifact instead of a slide deck.</div>
-  </section>
+  </div>
+  <div class="stage" id="stage-hero" aria-label="3D delegation tree — scroll to grow" role="img">
+    <div class="stage-legend mono">
+      <span><i style="background:#60A5FA"></i> human root</span>
+      <span><i style="background:#2DD4BF"></i> agent</span>
+      <span><i style="background:#FBBF24"></i> sub-agent</span>
+    </div>
+    <div class="stage-label mono">DELEGATION TREE — SCROLL TO GROW</div>
+  </div>
+</section>
 
-  <section id="demo">
-    <h2>The 90-second lifecycle</h2>
-    <p>Every terminal frame below is the literal output of <code>agentid demo</code>. Regenerate this page with <code>python3 scripts/generate_playground.py</code>. Nothing is simulated.</p>
-    <figure>
-      <figcaption><span>command</span><code>agentid demo</code></figcaption>
-      <pre>
+<!-- ═══ THE FOUR QUESTIONS ═══ -->
+<section id="questions">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Four questions <span class="dim">every agent system must answer</span></h2></div>
+    <p class="lead">NIST prices agent adoption assuming these are answerable by construction. Today they are answerable by nothing. Each card below is one receipt away once you use this implementation.</p>
+    <div class="questions" style="margin-top:1.75rem">
+      <div class="qcard"><div class="q">Q1 — WHICH</div><b>Which agent acted?</b><code>spiffe://example.trust/agent/marketing-agent</code></div>
+      <div class="qcard"><div class="q">Q2 — FOR WHOM</div><b>On whose authority?</b><code>oidc|acme-retail|usr_8842</code></div>
+      <div class="qcard"><div class="q">Q3 — WHICH CRED</div><b>With which credential?</b><code>dlg-key-2026-11 (ES256)</code></div>
+      <div class="qcard"><div class="q">Q4 — UNDER WHAT</div><b>Under which approval?</b><code>apr_01DEMO · cosign_above</code></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ EXPLAINER ═══ -->
+<section id="explainer">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Authority <span class="dim">narrows as it delegates</span></h2></div>
+    <p class="lead">A human grants an agent authority — a signed, expiring delegation with hard limits. If that agent delegates to another agent, every limit must <em>narrow</em>, never widen. Permissions intersect. Amount caps drop. Budgets shared across the chain are enforced at the point of action. This is not a policy you configure afterward — it is the data structure itself.</p>
+    <div class="grid2" style="margin-top:2rem">
+      <div>
+        <div class="points">
+          <div class="point"><span class="point-num">A</span><div><b>Attenuation is structural</b><span>A child grant with a wider cap than its parent cannot exist — it is rejected at creation. Not "advised against." Not "warned about." Rejected.</span></div></div>
+          <div class="point"><span class="point-num">B</span><div><b>Caps are per action AND cumulative</b><span><code class="mono">max_amount</code> caps a single call. <code class="mono">sum_max</code> draws down a shared budget across every call the chain makes, until it refuses.</span></div></div>
+          <div class="point"><span class="point-num">C</span><div><b>Co-signature is an obligation</b><span>Amounts above a threshold produce a <code class="mono">cosign_above</code> obligation. The relying party either discharges it with a human approval — or the action does not execute.</span></div></div>
+          <div class="point"><span class="point-num">D</span><div><b>Decisions are re-derivable</b><span>Every receipt names the profile digest and the inputs. Any party can re-run the validation offline and get the same answer. No vendor trust required.</span></div></div>
+        </div>
+      </div>
+      <div class="artifact" aria-hidden="true">
+        <div class="artifact-bar"><span class="lights"><i></i><i></i><i></i></span> delegation &nbsp;·&nbsp; signed, scoped, expiring</div>
+        <pre>{
+  <span class="c-blue">"id"</span>: <span class="c-green">"dlg_c3cafb8c0e3ca0b0"</span>,
+  <span class="c-blue">"subject"</span>: <span class="c-dim">{ </span><span class="c-blue">"type"</span><span class="c-dim">:</span> <span class="c-green">"human"</span><span class="c-dim">,</span> <span class="c-blue">"id"</span><span class="c-dim">:</span> <span class="c-green">"oidc|acme-retail|usr_8842"</span> <span class="c-dim">}</span>,
+  <span class="c-blue">"actor"</span>: <span class="c-dim">{ </span><span class="c-blue">"spiffe_id"</span><span class="c-dim">:</span> <span class="c-green">"spiffe://example.trust/agent/marketing-agent"</span> <span class="c-dim">}</span>,
+  <span class="c-blue">"constraints"</span>: <span class="c-dim">{</span>
+    <span class="c-blue">"permissions"</span><span class="c-dim">:</span> [<span class="c-dim">{</span> <span class="c-blue">"action"</span><span class="c-dim">:</span> <span class="c-green">"ad.credit.purchase"</span><span class="c-dim">,</span>
+                        <span class="c-blue">"system"</span><span class="c-dim">:</span> <span class="c-green">"meta-ads"</span> <span class="c-dim">}</span>],
+    <span class="c-blue">"max_amount"</span><span class="c-dim">:</span> <span class="c-dim">{</span> <span class="c-blue">"value"</span><span class="c-dim">:</span> <span class="c-green">"2000.00"</span><span class="c-dim">,</span> <span class="c-blue">"currency"</span><span class="c-dim">:</span> <span class="c-green">"USD"</span> <span class="c-dim">}</span>
+  <span class="c-dim">}</span>,
+  <span class="c-blue">"expires_at"</span><span class="c-dim">:</span> <span class="c-green">"2026-11-17T20:55:21Z"</span>,
+  <span class="c-blue">"signature"</span><span class="c-dim">:</span> <span class="c-dim">{</span> <span class="c-blue">"alg"</span><span class="c-dim">:</span> <span class="c-green">"ES256"</span><span class="c-dim">,</span> <span class="c-blue">"kid"</span><span class="c-dim">:</span> <span class="c-green">"dlg-key-2026-11"</span> <span class="c-dim">}</span>
+<span class="c-dim">}</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DEMO (REAL CLI OUTPUT) ═══ -->
+<section id="demo">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Not a mockup — <span class="dim">the literal CLI output</span></h2></div>
+    <p class="lead">Every line below is what <code class="mono">agentid demo</code> prints on a clean clone with a fresh virtual environment. It is regenerated by <code class="mono">scripts/sync-playground-captures.sh</code>. If it diverges, the CLI is right and this page is stale — <a href="https://github.com/rajat397/agentid/blob/main/scripts/sync-playground-captures.sh">here is the script</a>.</p>
+    <div class="artifact" style="margin-top:1.5rem">
+      <div class="artifact-bar"><span class="lights"><i></i><i></i><i></i></span> $ agentid demo</div>
+      <pre id="demo-capture"><!-- DEMO_CAPTURE_START -->
+
 agentid — the full lifecycle, running against real code
 =======================================================
 
@@ -123,20 +116,20 @@ agentid — the full lifecycle, running against real code
    constrain: ad.credit.purchase on meta-ads, hard cap $2,000,
               approval required above $500, expires in 30 minutes.
    The agent never holds the downstream credential. The enforcement point does.
-   delegation_id = dlg_430fa0f7fee3f132
+   delegation_id = dlg_e7d8404ffd093401
    signature     = valid (ES256, kid dlg-key-2026-11)
 
 2. The agent attempts an action that exceeds its authority — and is stopped
 ===========================================================================
    outcome   = invalid
    reason    = amount 4500.00 exceeds cap 2000.00
-   receipt   = rcp_3a713d0ff19f9c31  (action=ad.credit.purchase, result=denied)
+   receipt   = rcp_3677d2c9a082318d  (action=ad.credit.purchase, result=denied)
    The agent may not exceed its authorized cap. The denial itself is logged.
 
 3. Within authority — executed, chained, verifiable
 ===================================================
    outcome   = valid   (approval apr_01DEMO)
-   receipt   = rcp_a7bb4b4cf0187d28
+   receipt   = rcp_900dafd532cb28bb
 
 4. The four questions, answered from receipts alone
 ===================================================
@@ -148,104 +141,126 @@ agentid — the full lifecycle, running against real code
 5. Tamper with history — the chain catches it
 =============================================
    hash chain verifies: NO
-   broken at: receipt[1] prev_hash broken: expected de97622847e9… got 3a713d0ff19f…
-</pre>
-    </figure>
-  </section>
+   broken at: receipt[1] prev_hash broken: expected a89544e71bb4… got 3677d2c9a082…
+<!-- DEMO_CAPTURE_END --></pre>
+    </div>
+  </div>
+</section>
 
-  <section id="erasure">
-    <h2>The GDPR right to erasure, for agents</h2>
-    <p>A subject requests deletion. The plan enumerates every receipt that touched their data, identifies the downstream systems and derived artifacts, and tracks a 30-day deadline — without the control plane ever holding the subject's personal data.</p>
-    <figure>
-      <figcaption><span>command</span><code>agentid erasure cust_4471 --demo</code></figcaption>
-      <pre>
+<!-- ═══ TRY IT ═══ -->
+<section id="try-it">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Try the validator <span class="dim">— it runs in your browser</span></h2></div>
+    <p class="lead">A faithful TypeScript port of the same algorithm this repository ships (<code class="mono">src/agentid/validator.py</code>), exercised by contract tests including <code class="mono">vitest</code>. Drag the constraints and watch the outcome change. This is not a simulation of a decision — it is the decision.</p>
+    <div class="tryit" style="margin-top:1.5rem">
+      <div class="tryit-panel">
+        <div class="slider-row">
+          <label for="amount">Action amount <output id="amount-out">$1,000.00</output></label>
+          <input type="range" id="amount" min="10" max="5000" step="10" value="1000">
+        </div>
+        <div class="slider-row">
+          <label for="cap">Hard cap (max_amount) <output id="cap-out">$2,000.00</output></label>
+          <input type="range" id="cap" min="100" max="5000" step="100" value="2000">
+        </div>
+        <div class="slider-row">
+          <label for="threshold">Approval threshold (cosign_above) <output id="threshold-out">$500.00</output></label>
+          <input type="range" id="threshold" min="0" max="4000" step="100" value="500">
+        </div>
+        <div class="slider-row">
+          <label for="spent">Budget drawn (sum_max) <output id="spent-out">$800.00</output></label>
+          <input type="range" id="spent" min="0" max="2000" step="50" value="800">
+        </div>
+        <div class="toggle-row">
+          <span>Human approval supplied? <span class="mono" style="color:var(--dim)">cosign_above</span></span>
+          <button class="toggle" id="approval-toggle" role="switch" aria-checked="true" aria-label="approval supplied"></button>
+        </div>
+        <div class="toggle-row">
+          <span>Delegation revoked? <span class="mono" style="color:var(--dim)">invalidates in flight</span></span>
+          <button class="toggle" id="revoke-toggle" role="switch" aria-checked="false" aria-label="delegation revoked"></button>
+        </div>
+        <div class="tryit-actions">
+          <button class="btn primary" id="run-validation">Run validation →</button>
+          <button class="btn" id="reset-validation">Reset</button>
+        </div>
+      </div>
+      <div class="tryit-out" id="tryit-out" aria-live="polite">
+        <h3>Validation result</h3>
+        <div class="verdict valid" id="verdict">valid</div>
+        <p class="reason" id="reason">within constraints</p>
+        <div class="obligations" id="obligations"></div>
+        <div class="receipt-box" id="receipt-box">{
+  "delegation_id": "dlg_c3cafb8c0e3ca0b0",
+  "action": "ad.credit.purchase",
+  "system": "meta-ads",
+  "amount": "1000.00",
+  "constraints_evaluated": […]
+}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ EVIDENCE ═══ -->
+<section id="evidence">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Evidence <span class="dim">when you need to re-derive, not re-trust</span></h2></div>
+    <div class="grid2" style="margin-top:1rem">
+      <div>
+        <p class="lead">Every decision this implementation makes is reproducible by any party holding the inputs. That property — not the interface — is the entire point of agent identity.</p>
+        <div class="points">
+          <div class="point"><span class="point-num">→</span><div><b><a href="https://github.com/rajat397/agentid">github.com/rajat397/agentid</a></b><span>MIT-licensed. One dependency. 13 tests, all passing. Read the threat model before you deploy anything.</span></div></div>
+          <div class="point"><span class="point-num">→</span><div><b>The Validation Profile</b><span>Content-addressed by SHA-256. Every receipt names it, so a decision can be re-derived offline.</span></div></div>
+          <div class="point"><span class="point-num">→</span><div><b>What this is NOT</b><span>Production software. A NIST-certified artifact. A defense against prompt injection (out of layer — we bound impact). A claim that anything here is ratified by anyone.</span></div></div>
+        </div>
+      </div>
+      <div class="artifact">
+        <div class="artifact-bar"><span class="lights"><i></i><i></i><i></i></span> $ agentid erasure cust_4471 --demo</div>
+        <pre id="erasure-capture"><!-- ERASURE_CAPTURE_START -->
+
 erasure plan — subject cust_4471
 ================================
 {
-  &quot;subject_id&quot;: &quot;cust_4471&quot;,
-  &quot;created_at&quot;: &quot;2026-11-17T20:25:55Z&quot;,
-  &quot;deadline&quot;: &quot;2026-12-17T20:25:55Z&quot;,
-  &quot;days_remaining&quot;: 30,
-  &quot;total_receipts&quot;: 2,
-  &quot;delegations&quot;: [
-    &quot;dlg_6c43a711f8814e17&quot;
+  "subject_id": "cust_4471",
+  "created_at": "2026-11-17T21:26:18Z",
+  "deadline": "2026-12-17T21:26:18Z",
+  "days_remaining": 30,
+  "total_receipts": 2,
+  "delegations": [
+    "dlg_5d000ece6cb4bb4f"
   ],
-  &quot;downstream_systems&quot;: [
+  "downstream_systems": [
     {
-      &quot;system&quot;: &quot;zendesk&quot;,
-      &quot;records&quot;: 4,
-      &quot;deletion_method&quot;: &quot;customer_connector&quot;
+      "system": "zendesk",
+      "records": 4,
+      "deletion_method": "customer_connector"
     },
     {
-      &quot;system&quot;: &quot;internal_crm&quot;,
-      &quot;records&quot;: 28,
-      &quot;deletion_method&quot;: &quot;customer_connector&quot;
+      "system": "internal_crm",
+      "records": 28,
+      "deletion_method": "customer_connector"
     }
   ],
-  &quot;derived_artifacts&quot;: [
+  "derived_artifacts": [
     {
-      &quot;artifact&quot;: &quot;support_outcomes_model&quot;,
-      &quot;owner&quot;: &quot;support-analytics&quot;,
-      &quot;action_required&quot;: &quot;customer_action&quot;
+      "artifact": "support_outcomes_model",
+      "owner": "support-analytics",
+      "action_required": "customer_action"
     }
   ]
 }
-</pre>
-    </figure>
-  </section>
-
-  <section id="profile">
-    <h2>One content-addressed decision rule</h2>
-    <p>Every receipt names the Validation Profile under which it was produced. Anyone can re-derive the decision from the inputs — no vendor trust required.</p>
-    <figure>
-      <figcaption><span>command</span><code>agentid profile</code></figcaption>
-      <pre>{
-  &quot;iss&quot;: &quot;example-rp&quot;,
-  &quot;max_chain_length&quot;: 3,
-  &quot;max_clock_skew&quot;: 30,
-  &quot;max_pop_window&quot;: 300,
-  &quot;max_status_age&quot;: 60,
-  &quot;max_token_lifetime&quot;: 900,
-  &quot;predicates&quot;: [
-    &quot;eq&quot;,
-    &quot;max&quot;,
-    &quot;sum_max&quot;,
-    &quot;cosign_above&quot;,
-    &quot;window&quot;
-  ],
-  &quot;status_values&quot;: {
-    &quot;0x02&quot;: &quot;suspended&quot;
-  },
-  &quot;digest&quot;: &quot;Bz_ibI9Xz5xeHguO2uiCNNLMjzET9g-Q2__BszOhG0g&quot;
-}
-</pre>
-    </figure>
-  </section>
-
-  <section id="evidence">
-    <h2>Run it yourself</h2>
-    <pre class="card">git clone https://github.com/rajat397/agentid
-cd agentid
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .[dev]
-pytest          # 10 tests, all passing
-agentid demo    # the same output as this page</pre>
-    <div class="grid">
-      <div class="card"><h3>What it does</h3><p>Signed human→agent delegations, scoped and expiring powers, budget-enforced constraints, approval thresholds, hash-chained receipts, an erasure plan for agent-collected data.</p></div>
-      <div class="card"><h3>What it does not do</h3><p>Stop prompt injection. Replace your security review. Claim NIST certification. Serve as an enforcement proxy in production today. Read the threat model first.</p></div>
-      <div class="card"><h3>What it aligns with</h3><p>NIST NCCoE agent identity direction, RFC 8693 delegation semantics, OAuth 2.1 as drafted, OpenTelemetry GenAI agent spans, and the emerging SP-1800 practice guide.</p></div>
+<!-- ERASURE_CAPTURE_END --></pre>
+      </div>
     </div>
-  </section>
-
-</div>
+  </div>
+</section>
 
 <footer>
-  <div class="wrap">
-    agentid agentid 0.1.0 · MIT · Rajat Srivastava · <a href="https://github.com/rajat397/agentid">github.com/rajat397/agentid</a><br>
-    This page was generated from real CLI output. If it ever diverges from <code>agentid demo</code>, the CLI is correct and this page is stale.
+  <div class="wrap foot">
+    <span>agentid v0.1.0 · MIT · Rajat Srivastava</span>
+    <span>Experimental reference implementation — not for production use. <a href="https://github.com/rajat397/agentid">GitHub</a></span>
   </div>
 </footer>
 
+<script type="module" src="/src/main.ts"></script>
 </body>
 </html>
-

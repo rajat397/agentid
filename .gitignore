@@ -10,3 +10,7 @@ dist/
 build/
 *.log
 .DS_Store
+node_modules/
+dist/
+playground/dist/
+playground/node_modules/
