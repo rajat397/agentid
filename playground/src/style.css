@@ -151,3 +151,14 @@ footer { border-top: 1px solid var(--line); padding: 2.5rem 0 3rem; }
 .fallback-tree { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; }
 .fallback-tree svg { width: 100%; height: 100%; max-height: 100%; }
 .stage-fallback { background: radial-gradient(ellipse at 50% 42%, #101a28 0%, #0E1420 60%, var(--panel) 100%); }
+
+/* run feedback */
+.tryit-out.flash { animation: out-flash .45s ease-out; }
+@keyframes out-flash {
+  0% { box-shadow: 0 0 0 0 rgba(45,212,191,.55); border-color: var(--accent); }
+  100% { box-shadow: 0 0 0 18px rgba(45,212,191,0); border-color: var(--line); }
+}
+#run-count { margin-left: .4rem; opacity: .75; font-size: .85em; }
+@media (prefers-reduced-motion: reduce) {
+  .tryit-out.flash { animation: none; }
+}

@@ -9,6 +9,7 @@ interface State {
   approval: boolean; revoked: boolean;
 }
 const state: State = { amount: 1000, cap: 2000, threshold: 500, spent: 800, approval: true, revoked: false };
+let runs = 0;
 
 function el<T extends HTMLElement>(id: string): T {
   const e = document.getElementById(id);
@@ -54,6 +55,12 @@ function buildDelegation(): Delegation {
 }
 
 function run(): void {
+  runs += 1;
+  const out = el("tryit-out");
+  out.classList.remove("flash");
+  // force reflow so the class re-adds and the animation re-triggers
+  void out.offsetWidth;
+  out.classList.add("flash");
   readUI();
   const dlg = buildDelegation();
   const action = { action: "ad.credit.purchase", system: "meta-ads", amount: state.amount.toFixed(2), currency: "USD", budgetKey: "ads_q4" };
@@ -96,10 +103,15 @@ function run(): void {
     currency: action.currency,
     outcome: result.outcome,
     reason: result.reason,
+    validated_at: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+    run: runs,
     obligations: result.obligations.map((o) => `${o.type}:${o.status}`),
     constraints_evaluated: result.constraintsEvaluated.map((c) => `${c.constraint}=${c.satisfied}`),
   };
   el("receipt-box").textContent = JSON.stringify(receipt, null, 2);
+
+  const lbl = document.getElementById("run-count");
+  if (lbl) lbl.textContent = `run #${runs}`;
 }
 
 export function mountTryIt(): void {
