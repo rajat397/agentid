@@ -60,6 +60,10 @@ export class TreeScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(w, h);
     this.renderer.setClearColor(0x000000, 0);
+    this.renderer.domElement.style.position = "absolute";
+    this.renderer.domElement.style.inset = "0";
+    this.renderer.domElement.style.width = "100%";
+    this.renderer.domElement.style.height = "100%";
     this.container.appendChild(this.renderer.domElement);
 
     this.scene.fog = new THREE.FogExp2(0x0A0E14, 0.10);

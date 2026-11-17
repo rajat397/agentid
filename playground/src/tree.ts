@@ -21,6 +21,10 @@ export function mountTree(container: HTMLElement): void {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(w, h);
   renderer.setClearColor(0x000000, 0);
+  renderer.domElement.style.position = "absolute";
+  renderer.domElement.style.inset = "0";
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
   container.appendChild(renderer.domElement);
 
   // Lights
