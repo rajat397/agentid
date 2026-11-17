@@ -12,10 +12,10 @@ export function mountTree(container: HTMLElement): void {
   const w = container.clientWidth, h = container.clientHeight;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x0A0E14, 0.28);
+  scene.fog = new THREE.FogExp2(0x0A0E14, 0.12);
 
   const camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 60);
-  camera.position.set(0, 0.6, 9);
+  camera.position.set(0, 0.4, 8.2);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -24,11 +24,11 @@ export function mountTree(container: HTMLElement): void {
   container.appendChild(renderer.domElement);
 
   // Lights
-  scene.add(new THREE.AmbientLight(0x2a3548, 1.6));
-  const key = new THREE.DirectionalLight(0x8ef0d5, 2.2);
+  scene.add(new THREE.AmbientLight(0x44546e, 2.4));
+  const key = new THREE.DirectionalLight(0x8ef0d5, 3.0);
   key.position.set(3, 4, 5);
   scene.add(key);
-  const rim = new THREE.DirectionalLight(0x3b82f6, 1.4);
+  const rim = new THREE.DirectionalLight(0x3b82f6, 2.2);
   rim.position.set(-4, -2, -3);
   scene.add(rim);
 
@@ -61,9 +61,9 @@ export function mountTree(container: HTMLElement): void {
     const mat = new THREE.MeshStandardMaterial({
       color: nodeColor[n.kind],
       emissive: nodeColor[n.kind],
-      emissiveIntensity: 0.55,
-      roughness: 0.35,
-      metalness: 0.1,
+      emissiveIntensity: 1.0,
+      roughness: 0.28,
+      metalness: 0.05,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(n.pos);
@@ -78,7 +78,7 @@ export function mountTree(container: HTMLElement): void {
     const dir = new THREE.Vector3().subVectors(pb, pa);
     const len = dir.length();
     const geo = new THREE.CylinderGeometry(0.035, 0.017, len, 8, 1, true);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x3B4A5F, transparent: true, opacity: 0.85 });
+    const mat = new THREE.MeshBasicMaterial({ color: 0x55688A, transparent: true, opacity: 0.95 });
     const edge = new THREE.Mesh(geo, mat);
     edge.position.copy(pa).addScaledVector(dir, 0.5);
     edge.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
@@ -121,7 +121,7 @@ export function mountTree(container: HTMLElement): void {
       const s = 0.001 + local * 1.05;
       mesh.scale.setScalar(s);
       const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0.15 + local * 0.5 + (prefersReduced ? 0 : Math.sin(t * 1.4 + i) * 0.06);
+      mat.emissiveIntensity = 0.5 + local * 0.75 + (prefersReduced ? 0 : Math.sin(t * 1.4 + i) * 0.12);
     });
 
     if (!prefersReduced) {
