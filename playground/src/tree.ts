@@ -103,7 +103,7 @@ export function mountTree(container: HTMLElement): void {
     const rect = el.getBoundingClientRect();
     const vh = window.innerHeight;
     const progress = 1 - rect.top / (vh + rect.height);
-    return Math.max(0, Math.min(1, (progress - 0.12) / 0.55));
+    return Math.max(0, Math.min(1, progress * 1.15));
   };
 
   const clock = new THREE.Clock();
@@ -115,9 +115,10 @@ export function mountTree(container: HTMLElement): void {
     reveal += (targetReveal() - reveal) * 0.06;
 
     // Nodes appear by depth index
+    // root appears first; agents by 0.25; sub-agents by 0.75 — full reveal by 1.0
     meshes.forEach((mesh, i) => {
-      const order = i === 0 ? 0 : i <= 3 ? 1 + (i - 1) * 0.22 : 1.66 + (i - 4) * 0.22;
-      const local = Math.max(0, Math.min(1, (reveal - order) / 0.22));
+      const order = i === 0 ? 0 : i <= 3 ? 0.18 + (i - 1) * 0.14 : 0.52 + (i - 4) * 0.12;
+      const local = Math.max(0, Math.min(1, (reveal - order) / 0.18));
       const s = 0.001 + local * 1.05;
       mesh.scale.setScalar(s);
       const mat = mesh.material as THREE.MeshStandardMaterial;
