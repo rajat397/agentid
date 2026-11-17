@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>agentid — identity, guardrails, reliability and traceability for software agents</title>
+<title>agentid — agents got permissions. Nobody asked who authorized them.</title>
 <meta name="description" content="A reference implementation of agent identity for the OTel/MCP era — scoped delegations, tamper-evident receipts, and decisions you can re-derive. Runnable, MIT-licensed." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🛡️</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/src/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/style.css?v=3">
 </head>
 <body>
 
@@ -17,96 +17,119 @@
   <div class="hbar">
     <div class="logo">agent<em>id</em></div>
     <nav>
-      <a href="#explainer">Explainer</a>
-      <a href="#demo">Demo</a>
-      <a href="#try-it">Try it</a>
+      <a href="#gate">The Gate</a>
+      <a href="#tree-section">The Tree</a>
+      <a href="#demo">The Run</a>
+      <a href="#receipt">The Receipt</a>
       <a href="#evidence">Evidence</a>
     </nav>
     <a class="gh-btn" href="https://github.com/rajat397/agentid">GitHub ↗</a>
   </div>
 </header>
 
-<!-- ═══ HERO ═══ -->
-<section class="hero" style="border-top:none">
-  <div>
+<!-- ═══ HERO — full-bleed 3D ═══ -->
+<section class="hero-full" id="top">
+  <canvas id="hero-canvas" aria-label="3D delegation tree growing when a human delegates a grant to an agent, and the agent delegates to sub-agents"></canvas>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="hero-copy">
     <div class="eyebrow"><span class="dot"></span> Experimental · MIT · v0.1.0</div>
-    <h1><span class="line">An agent acted.</span><span class="line"><span class="grad">Who said it could?</span></span></h1>
-    <p class="sub">An agent holds a valid token, calls a tool, posts a purchase — and when security asks <em>which agent, under whose authority, and what exactly was allowed</em>, nobody can answer. agentid makes the answer structural, not forensic.</p>
+    <h1>
+      <span class="line">An agent acted.</span>
+      <span class="line"><span class="grad">Who said it could?</span></span>
+    </h1>
+    <p class="sub">Every AI agent system on earth issues tokens. Almost none can answer, after the fact, <em>which agent, under whose authority, and what exactly was authorized</em>. agentid makes the answer structural — not forensic.</p>
     <div class="hero-ctas">
-      <a class="btn primary" href="#try-it">Try the validator ↓</a>
-      <a class="btn" href="#explainer">See how it works</a>
+      <a class="btn primary" href="#gate">Watch a grant narrow →</a>
+      <a class="btn ghost" href="https://github.com/rajat397/agentid">Get the code</a>
     </div>
     <div class="hero-meta mono">
-      <span><b>13</b> executable tests</span>
-      <span><b>1</b> dependency</span>
-      <span><b>0</b> hosted services</span>
+      <span><b>13</b> tests</span><span><b>1</b> dependency</span><span><b>0</b> services</span>
     </div>
   </div>
-  <div class="stage" id="stage-hero" aria-label="3D delegation tree — scroll to grow" role="img">
-    <div class="stage-legend mono">
-      <span><i style="background:#60A5FA"></i> human root</span>
-      <span><i style="background:#2DD4BF"></i> agent</span>
-      <span><i style="background:#FBBF24"></i> sub-agent</span>
-    </div>
-    <div class="stage-label mono">DELEGATION TREE</div>
-  </div>
+  <a class="scroll-hint mono" href="#gate" aria-hidden="true">scroll ↓</a>
 </section>
 
-<!-- ═══ THE FOUR QUESTIONS ═══ -->
-<section id="questions">
-  <div class="wrap">
-    <div class="sec-head"><span class="sec-num">01</span><h2>Four questions <span class="dim">every agent system must answer</span></h2></div>
-    <p class="lead">NIST prices agent adoption assuming these are answerable by construction. Today they are answerable by nothing. Each card below is one receipt away once you use this implementation.</p>
-    <div class="questions" style="margin-top:1.75rem">
-      <div class="qcard"><div class="q">Q1 — WHICH</div><b>Which agent acted?</b><code>spiffe://example.trust/agent/marketing-agent</code></div>
-      <div class="qcard"><div class="q">Q2 — FOR WHOM</div><b>On whose authority?</b><code>oidc|acme-retail|usr_8842</code></div>
-      <div class="qcard"><div class="q">Q3 — WHICH CRED</div><b>With which credential?</b><code>dlg-key-2026-11 (ES256)</code></div>
-      <div class="qcard"><div class="q">Q4 — UNDER WHAT</div><b>Under which approval?</b><code>apr_01DEMO · cosign_above</code></div>
-    </div>
-  </div>
-</section>
+<!-- ═══ THE GATE — full-height interactive ═══ -->
+<section id="gate" class="gate-section">
+  <div class="gate-grid">
+    <div class="gate-copy">
+      <div class="sec-head"><span class="sec-num">01</span><h2>The gate is the product</h2></div>
+      <p class="gate-lead">Agents don't obey "be careful." They obey the constraints they were handed — or they don't execute at all. This ring is the entire enforcement mechanism of this implementation: an amount arrives, the profile’s rules decide, and the action <em>is or isn't allowed to exist</em>. Nothing else happens. Drag the slider.</p>
 
-<!-- ═══ EXPLAINER ═══ -->
-<section id="explainer">
-  <div class="wrap">
-    <div class="sec-head"><span class="sec-num">02</span><h2>Authority <span class="dim">narrows as it delegates</span></h2></div>
-    <p class="lead">A human grants an agent authority — a signed, expiring delegation with hard limits. If that agent delegates to another agent, every limit must <em>narrow</em>, never widen. Permissions intersect. Amount caps drop. Budgets shared across the chain are enforced at the point of action. This is not a policy you configure afterward — it is the data structure itself.</p>
-    <div class="grid2" style="margin-top:2rem">
-      <div>
-        <div class="points">
-          <div class="point"><span class="point-num">A</span><div><b>Attenuation is structural</b><span>A child grant with a wider cap than its parent cannot exist — it is rejected at creation. Not "advised against." Not "warned about." Rejected.</span></div></div>
-          <div class="point"><span class="point-num">B</span><div><b>Caps are per action AND cumulative</b><span><code class="mono">max_amount</code> caps a single call. <code class="mono">sum_max</code> draws down a shared budget across every call the chain makes, until it refuses.</span></div></div>
-          <div class="point"><span class="point-num">C</span><div><b>Co-signature is an obligation</b><span>Amounts above a threshold produce a <code class="mono">cosign_above</code> obligation. The relying party either discharges it with a human approval — or the action does not execute.</span></div></div>
-          <div class="point"><span class="point-num">D</span><div><b>Decisions are re-derivable</b><span>Every receipt names the profile digest and the inputs. Any party can re-run the validation offline and get the same answer. No vendor trust required.</span></div></div>
+      <div class="gate-controls">
+        <div class="ctl-row">
+          <label for="g-amount">Amount <output id="g-amount-out">$1,000.00</output></label>
+          <input type="range" id="g-amount" min="10" max="5000" step="10" value="1000">
+        </div>
+        <div class="ctl-row">
+          <label for="g-cap">Human-set hard cap <output id="g-cap-out">$2,000.00</output></label>
+          <input type="range" id="g-cap" min="100" max="5000" step="50" value="2000">
+        </div>
+        <div class="ctl-row">
+          <label for="g-threshold">Approval threshold <output id="g-threshold-out">$500.00</output></label>
+          <input type="range" id="g-threshold" min="0" max="5000" step="50" value="500">
+        </div>
+        <div class="approval-row">
+          <div>
+            <b>Human approval on file</b>
+            <span class="mono small">apr_01DEMO · valid · not revoked</span>
+          </div>
+          <button class="toggle" id="g-approval" role="switch" aria-checked="true" aria-label="approval on file"></button>
         </div>
       </div>
-      <div class="artifact" aria-hidden="true">
-        <div class="artifact-bar"><span class="lights"><i></i><i></i><i></i></span> delegation &nbsp;·&nbsp; signed, scoped, expiring</div>
-        <pre>{
-  <span class="c-blue">"id"</span>: <span class="c-green">"dlg_c3cafb8c0e3ca0b0"</span>,
-  <span class="c-blue">"subject"</span>: <span class="c-dim">{ </span><span class="c-blue">"type"</span><span class="c-dim">:</span> <span class="c-green">"human"</span><span class="c-dim">,</span> <span class="c-blue">"id"</span><span class="c-dim">:</span> <span class="c-green">"oidc|acme-retail|usr_8842"</span> <span class="c-dim">}</span>,
-  <span class="c-blue">"actor"</span>: <span class="c-dim">{ </span><span class="c-blue">"spiffe_id"</span><span class="c-dim">:</span> <span class="c-green">"spiffe://example.trust/agent/marketing-agent"</span> <span class="c-dim">}</span>,
-  <span class="c-blue">"constraints"</span>: <span class="c-dim">{</span>
-    <span class="c-blue">"permissions"</span><span class="c-dim">:</span> [<span class="c-dim">{</span> <span class="c-blue">"action"</span><span class="c-dim">:</span> <span class="c-green">"ad.credit.purchase"</span><span class="c-dim">,</span>
-                        <span class="c-blue">"system"</span><span class="c-dim">:</span> <span class="c-green">"meta-ads"</span> <span class="c-dim">}</span>],
-    <span class="c-blue">"max_amount"</span><span class="c-dim">:</span> <span class="c-dim">{</span> <span class="c-blue">"value"</span><span class="c-dim">:</span> <span class="c-green">"2000.00"</span><span class="c-dim">,</span> <span class="c-blue">"currency"</span><span class="c-dim">:</span> <span class="c-green">"USD"</span> <span class="c-dim">}</span>
-  <span class="c-dim">}</span>,
-  <span class="c-blue">"expires_at"</span><span class="c-dim">:</span> <span class="c-green">"2026-11-17T20:55:21Z"</span>,
-  <span class="c-blue">"signature"</span><span class="c-dim">:</span> <span class="c-dim">{</span> <span class="c-blue">"alg"</span><span class="c-dim">:</span> <span class="c-green">"ES256"</span><span class="c-dim">,</span> <span class="c-blue">"kid"</span><span class="c-dim">:</span> <span class="c-green">"dlg-key-2026-11"</span> <span class="c-dim">}</span>
-<span class="c-dim">}</span></pre>
+
+      <p class="gate-verdict">
+        <span class="gv-label mono">DECISION</span>
+        <span class="gv-value" id="gate-verdict">VALID</span>
+        <span class="gv-reason" id="gate-reason">within constraints — amount under cap, approval on file</span>
+      </p>
+    </div>
+    <div class="gate-stage" id="gate-stage" aria-label="3D aperture gate that narrows or admits the action">
+      <div class="gate-fallback" id="gate-fallback" hidden>
+        <div class="gf-ring" id="gf-ring"></div>
+        <div class="gf-caption mono" id="gf-caption">ALLOWED</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ DEMO (REAL CLI OUTPUT) ═══ -->
+<!-- ═══ THE TREE — scrollytelling ═══ -->
+<section id="tree-section" class="tree-section">
+  <div class="tree-grid">
+    <div class="tree-stage-wrap">
+      <div class="tree-stage" id="tree-stage" aria-label="3D delegation tree. Select an agent."></div>
+      <div class="tree-hint mono">click a node to select it</div>
+    </div>
+    <div class="tree-narrative">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Authority narrows — by construction</h2></div>
+      <article class="step" data-step="0">
+        <h3><span class="step-num">A</span>R o o t of trust is human</h3>
+        <p>Everything starts with a signed delegation from a human to an agent — scoped to one action type, one system, a hard cap, and 30 minutes. No evergreen authority. No ambient permissions.</p>
+      </article>
+      <article class="step" data-step="1">
+        <h3><span class="step-num">B</span>Narrowing is mandatory, not aspirational</h3>
+        <p>If the agent re-delegates — to a creative writer, an analyst, an incident responder — every constraint visibly shrinks. Permissions <em>intersect</em>. Amount caps <em>drop</em>. Budgets draw down. A wider child grant is rejected at creation, before it can exist.</p>
+      </article>
+      <article class="step" data-step="2">
+        <h3><span class="step-num">C</span>Enforcement lives at the point of action</h3>
+        <p>Not at login. Not at session start. The gate re-checks on every single call — cap, budget, threshold, revocation. The agent doesn't ask for permission; the gate decides whether the action exists.</p>
+      </article>
+      <article class="step" data-step="3">
+        <h3><span class="step-num">D</span>Revocation bites in-flight</h3>
+        <p>Revoke the leaf delegation and the next tool call is denied — with a receipt. No rotation ceremony, no waiting for token expiry, no Am I allowed to do X asking the IdP.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ THE RUN — real CLI output, animated ═══ -->
 <section id="demo">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">03</span><h2>Not a mockup — <span class="dim">the literal CLI output</span></h2></div>
-    <p class="lead">Every line below is what <code class="mono">agentid demo</code> prints on a clean clone with a fresh virtual environment. It is regenerated by <code class="mono">scripts/sync-playground-captures.sh</code>. If it diverges, the CLI is right and this page is stale — <a href="https://github.com/rajat397/agentid/blob/main/scripts/sync-playground-captures.sh">here is the script</a>.</p>
-    <div class="artifact" style="margin-top:1.5rem">
-      <div class="artifact-bar"><span class="lights"><i></i><i></i><i></i></span> $ agentid demo</div>
-      <pre id="demo-capture"><!-- DEMO_CAPTURE_START -->
+    <div class="sec-head"><span class="sec-num">03</span><h2>Run it. Watch it refuse.</h2></div>
+    <p class="lead">Every line below is what <code class="mono">agentid demo</code> printed on a clean clone. The script that produces this output is in the repository — you can re-derive it. <a href="https://github.com/rajat397/agentid/blob/main/scripts/sync-playground-captures.sh">See it here.</a></p>
+    <div class="terminal" id="terminal-wrap">
+      <div class="terminal-bar"><span class="lights"><i></i><i></i><i></i></span><span class="terminal-title mono">agentid demo — real output, regenerated every deploy</span></div>
+      <pre class="terminal-body" id="demo-capture"><!-- DEMO_CAPTURE_START -->
 
 agentid — the full lifecycle, running against real code
 =======================================================
@@ -116,20 +139,20 @@ agentid — the full lifecycle, running against real code
    constrain: ad.credit.purchase on meta-ads, hard cap $2,000,
               approval required above $500, expires in 30 minutes.
    The agent never holds the downstream credential. The enforcement point does.
-   delegation_id = dlg_e7d8404ffd093401
+   delegation_id = dlg_2f808d32b5fc31b5
    signature     = valid (ES256, kid dlg-key-2026-11)
 
 2. The agent attempts an action that exceeds its authority — and is stopped
 ===========================================================================
    outcome   = invalid
    reason    = amount 4500.00 exceeds cap 2000.00
-   receipt   = rcp_3677d2c9a082318d  (action=ad.credit.purchase, result=denied)
+   receipt   = rcp_21aa1223172d7e5e  (action=ad.credit.purchase, result=denied)
    The agent may not exceed its authorized cap. The denial itself is logged.
 
 3. Within authority — executed, chained, verifiable
 ===================================================
    outcome   = valid   (approval apr_01DEMO)
-   receipt   = rcp_900dafd532cb28bb
+   receipt   = rcp_6579bd3766d9257b
 
 4. The four questions, answered from receipts alone
 ===================================================
@@ -141,60 +164,35 @@ agentid — the full lifecycle, running against real code
 5. Tamper with history — the chain catches it
 =============================================
    hash chain verifies: NO
-   broken at: receipt[1] prev_hash broken: expected a89544e71bb4… got 3677d2c9a082…
+   broken at: receipt[1] prev_hash broken: expected 5b3f1737410b… got 21aa1223172d…
 <!-- DEMO_CAPTURE_END --></pre>
     </div>
   </div>
 </section>
 
-<!-- ═══ TRY IT ═══ -->
-<section id="try-it">
+<!-- ═══ THE RECEIPT ═══ -->
+<section id="receipt">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">04</span><h2>Try the validator <span class="dim">— it runs in your browser</span></h2></div>
-    <p class="lead">A faithful TypeScript port of the same algorithm this repository ships (<code class="mono">src/agentid/validator.py</code>), exercised by contract tests including <code class="mono">vitest</code>. Drag the constraints and watch the outcome change. This is not a simulation of a decision — it is the decision.</p>
-    <div class="tryit" style="margin-top:1.5rem">
-      <div class="tryit-panel">
-        <div class="slider-row">
-          <label for="amount">Action amount <output id="amount-out">$1,000.00</output></label>
-          <input type="range" id="amount" min="10" max="5000" step="10" value="1000">
-        </div>
-        <div class="slider-row">
-          <label for="cap">Hard cap (max_amount) <output id="cap-out">$2,000.00</output></label>
-          <input type="range" id="cap" min="100" max="5000" step="100" value="2000">
-        </div>
-        <div class="slider-row">
-          <label for="threshold">Approval threshold (cosign_above) <output id="threshold-out">$500.00</output></label>
-          <input type="range" id="threshold" min="0" max="4000" step="100" value="500">
-        </div>
-        <div class="slider-row">
-          <label for="spent">Budget drawn (sum_max) <output id="spent-out">$800.00</output></label>
-          <input type="range" id="spent" min="0" max="2000" step="50" value="800">
-        </div>
-        <div class="toggle-row">
-          <span>Human approval supplied? <span class="mono" style="color:var(--dim)">cosign_above</span></span>
-          <button class="toggle" id="approval-toggle" role="switch" aria-checked="true" aria-label="approval supplied"></button>
-        </div>
-        <div class="toggle-row">
-          <span>Delegation revoked? <span class="mono" style="color:var(--dim)">invalidates in flight</span></span>
-          <button class="toggle" id="revoke-toggle" role="switch" aria-checked="false" aria-label="delegation revoked"></button>
-        </div>
-        <div class="tryit-actions">
-          <button class="btn primary" id="run-validation">Run validation → <span class="mono" id="run-count">run #0</span></button>
-          <button class="btn" id="reset-validation">Reset</button>
+    <div class="sec-head"><span class="sec-num">04</span><h2>The receipt is the product</h2></div>
+    <div class="receipt-grid">
+      <div class="receipt-copy">
+        <p class="lead">The outcome of any incident is a piece of paper: which agent, under whose authority, with what credential, what action, under what approval. This implementation produces that paper as a matter of course — signed, chained, hash-verified, and re-derivable by anyone holding the inputs.</p>
+        <div class="receipt-props">
+          <div class="rp"><b>Signed</b><span>ES256 — tamper-evident by construction</span></div>
+          <div class="rp"><b>Chained</b><span>each receipt hash-links the previous; one altered receipt breaks the seal</span></div>
+          <div class="rp"><b>Content-addressed</b><span>every receipt names the exact validation profile that decided it</span></div>
         </div>
       </div>
-      <div class="tryit-out" id="tryit-out" aria-live="polite">
-        <h3>Validation result</h3>
-        <div class="verdict valid" id="verdict">valid</div>
-        <p class="reason" id="reason">within constraints</p>
-        <div class="obligations" id="obligations"></div>
-        <div class="receipt-box" id="receipt-box">{
-  "delegation_id": "dlg_c3cafb8c0e3ca0b0",
-  "action": "ad.credit.purchase",
-  "system": "meta-ads",
-  "amount": "1000.00",
-  "constraints_evaluated": […]
-}</div>
+      <div class="receipt-card" aria-hidden="true">
+        <div class="rc-head"><span class="rc-brand mono">agentid</span><span class="rc-type mono">RECEIPT</span></div>
+        <div class="rc-row"><span>action</span><b>ad.credit.purchase</b></div>
+        <div class="rc-row"><span>system</span><b>meta-ads</b></div>
+        <div class="rc-row"><span>amount</span><b>$2,000.00</b></div>
+        <div class="rc-row"><span>agent</span><b>spiffe://…marketing-agent</b></div>
+        <div class="rc-row"><span>authority</span><b>usr_8842 · via dlg_c3ca…</b></div>
+        <div class="rc-row"><span>approval</span><b>apr_01DEMO · cosign_above</b></div>
+        <div class="rc-row"><span>outcome</span><b class="good">ALLOWED</b></div>
+        <div class="rc-hash mono">sha256:9f2c…e1a7 · chain verified ✓</div>
       </div>
     </div>
   </div>
@@ -203,30 +201,37 @@ agentid — the full lifecycle, running against real code
 <!-- ═══ EVIDENCE ═══ -->
 <section id="evidence">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">05</span><h2>Evidence <span class="dim">when you need to re-derive, not re-trust</span></h2></div>
-    <div class="grid2" style="margin-top:1rem">
-      <div>
-        <p class="lead">Every decision this implementation makes is reproducible by any party holding the inputs. That property — not the interface — is the entire point of agent identity.</p>
-        <div class="points">
-          <div class="point"><span class="point-num">→</span><div><b><a href="https://github.com/rajat397/agentid">github.com/rajat397/agentid</a></b><span>MIT-licensed. One dependency. 13 tests, all passing. Read the threat model before you deploy anything.</span></div></div>
-          <div class="point"><span class="point-num">→</span><div><b>The Validation Profile</b><span>Content-addressed by SHA-256. Every receipt names it, so a decision can be re-derived offline.</span></div></div>
-          <div class="point"><span class="point-num">→</span><div><b>What this is NOT</b><span>Production software. A NIST-certified artifact. A defense against prompt injection (out of layer — we bound impact). A claim that anything here is ratified by anyone.</span></div></div>
-        </div>
-      </div>
-      <div class="artifact">
-        <div class="artifact-bar"><span class="lights"><i></i><i></i><i></i></span> $ agentid erasure cust_4471 --demo</div>
-        <pre id="erasure-capture"><!-- ERASURE_CAPTURE_START -->
+    <div class="sec-head"><span class="sec-num">05</span><h2>Don't re-trust — re-derive</h2></div>
+    <p class="lead">Every decision this implementation makes is reproducible by any party holding the inputs. That property — not the interface — is the entire point of agent identity.</p>
+    <div class="evidence-grid">
+      <a class="ev-card" href="https://github.com/rajat397/agentid">
+        <div class="ev-k mono">REPOSITORY</div>
+        <div class="ev-t">github.com/rajat397/agentid</div>
+        <div class="ev-d">MIT-licensed. One dependency. 13 tests, all passing. Read the threat model before you deploy anything.</div>
+        <div class="ev-arrow mono">→</div>
+      </a>
+      <a class="ev-card" href="https://rajat397.github.io/agentid/">
+        <div class="ev-k mono">THIS PAGE</div>
+        <div class="ev-t">rajat397.github.io/agentid</div>
+        <div class="ev-d">The playground is a static build of the actual code. No fake demos, no screenshots of a fictional product.</div>
+        <div class="ev-arrow mono">→</div>
+      </a>
+      <div class="ev-card static">
+        <div class="ev-k mono">ERASURE</div>
+        <div class="ev-t">Right to erasure, executable</div>
+        <div class="ev-d">agent-collected personal data enumerable from receipts alone — before any manual effort, inside one month by construction.</div>
+        <pre id="erasure-capture" class="mini-term"><!-- ERASURE_CAPTURE_START -->
 
 erasure plan — subject cust_4471
 ================================
 {
   "subject_id": "cust_4471",
-  "created_at": "2026-11-17T21:26:18Z",
-  "deadline": "2026-12-17T21:26:18Z",
+  "created_at": "2026-11-17T22:02:46Z",
+  "deadline": "2026-12-17T22:02:46Z",
   "days_remaining": 30,
   "total_receipts": 2,
   "delegations": [
-    "dlg_5d000ece6cb4bb4f"
+    "dlg_3439a310c444157a"
   ],
   "downstream_systems": [
     {

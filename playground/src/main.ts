@@ -1,52 +1,123 @@
-import { mountTree } from "./tree";
-import { mountTryIt } from "./tryit";
+import { mountTree as mountHeroTree } from "./tree";
+import { TreeScene } from "./tree3d";
+import { GateScene, computeVerdict, type GateVerdict } from "./gate";
 
-// ── Tree (WebGL) ────────────────────────────────────────────────
-// If WebGL is unavailable (old GPU, headless browser, blocked GPU),
-// the page must still work perfectly — the 3D scene is a garnish,
-// not a dependency. Fall back to a static caption and move on.
-const hero = document.getElementById("stage-hero");
-if (hero) {
+/* ── hero tree (ambient, full-bleed) ─────────────────────────── */
+const heroCanvas = document.getElementById("hero-canvas") as HTMLCanvasElement | null;
+try {
+  const stage = heroCanvas?.parentElement;
+  if (stage) mountHeroTree(stage);
+} catch (err) {
+  console.warn("[agentid] hero tree failed; page still works:", err);
+}
+
+/* ── tree-section interactive scene ───────────────────────────── */
+const treeStage = document.getElementById("tree-stage");
+try {
+  if (treeStage) new TreeScene(treeStage).init();
+} catch (err) {
+  console.warn("[agentid] tree scene failed:", err);
+  if (treeStage) treeStage.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:#8B94A3;font-family:monospace;font-size:.8rem">3D unavailable — <a href="https://github.com/rajat397/agentid" style="color:#2DD4BF">see the code</a></div>';
+}
+
+/* ── gate scene + sliders ─────────────────────────────────────── */
+const gateStage = document.getElementById("gate-stage");
+const ids = ["g-amount", "g-cap", "g-threshold"] as const;
+const outputs = { amount: "g-amount-out", cap: "g-cap-out", threshold: "g-threshold-out" } as const;
+const gateVerdictEl = document.getElementById("gate-verdict");
+const gateReasonEl = document.getElementById("gate-reason");
+const gateVerdictWrap = document.querySelector<HTMLElement>(".gate-verdict");
+
+const state = { amount: 1000, cap: 2000, threshold: 500, approval: true };
+
+function fmt(n: number): string {
+  return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function readSliders(): void {
+  state.amount = Number((document.getElementById("g-amount") as HTMLInputElement)?.value ?? 1000);
+  state.cap = Number((document.getElementById("g-cap") as HTMLInputElement)?.value ?? 2000);
+  state.threshold = Number((document.getElementById("g-threshold") as HTMLInputElement)?.value ?? 500);
+  state.approval = document.getElementById("g-approval")?.getAttribute("aria-checked") === "true";
+}
+function renderVerdict(): void {
+  readSliders();
+  const v: GateVerdict = computeVerdict(state.amount, state.cap, state.threshold, state.approval);
+  if (gateVerdictEl) {
+    gateVerdictEl.textContent = v === "valid" ? "VALID" : v === "invalid" ? "REJECTED" : "NEEDS APPROVAL";
+    gateVerdictEl.className = `gv-value ${v}`;
+  }
+  if (gateReasonEl) {
+    gateReasonEl.textContent =
+      v === "valid" ? "within constraints — amount under cap, approval on file"
+      : v === "invalid" ? (state.amount > state.cap ? `amount ${fmt(state.amount)} exceeds the ${fmt(state.cap)} cap` : "authority revoked")
+      : `amount exceeds the ${fmt(state.threshold)} co-sign threshold — a human must approve or it does not happen`;
+  }
+  if (gateVerdictWrap) gateVerdictWrap.className = `gate-verdict ${v}`;
+  document.getElementById("g-amount-out")!.textContent = fmt(state.amount);
+  document.getElementById("g-cap-out")!.textContent = fmt(state.cap);
+  document.getElementById("g-threshold-out")!.textContent = fmt(state.threshold);
+
+  const fallback = document.getElementById("gate-fallback");
+  if (fallback && !fallback.hidden) {
+    const ring = document.getElementById("gf-ring");
+    const caption = document.getElementById("gf-caption");
+    if (ring) { ring.className = `gf-ring ${v === "valid" ? "" : v}`; }
+    if (caption) caption.textContent = v === "valid" ? "ALLOWED" : v === "invalid" ? "REJECTED" : "NEEDS APPROVAL";
+  }
+  gateSceneRef?.setVerdict(v);
+}
+const gateSceneRef = gateStage ? safeInitGate(gateStage) : null;
+function safeInitGate(stage: HTMLElement): GateScene | null {
   try {
-    mountTree(hero);
+    const s = new GateScene(stage);
+    s.init();
+    return s;
   } catch (err) {
-    console.warn("[agentid] WebGL unavailable — showing static fallback:", err);
-    hero.classList.add("stage-fallback");
-    hero.innerHTML = `<div class="fallback-tree" aria-label="Delegation tree: human root delegates to three agents, each narrowing authority downward">
-      <svg viewBox="0 0 400 300" role="img" aria-label="Delegation tree diagram">
-        <line x1="200" y1="40" x2="80" y2="160" stroke="#55688A" stroke-width="3"/>
-        <line x1="200" y1="40" x2="200" y2="165" stroke="#55688A" stroke-width="3"/>
-        <line x1="200" y1="40" x2="320" y2="160" stroke="#55688A" stroke-width="3"/>
-        <line x1="80" y1="160" x2="40" y2="275" stroke="#2B3648" stroke-width="2"/>
-        <line x1="80" y1="160" x2="130" y2="275" stroke="#2B3648" stroke-width="2"/>
-        <line x1="200" y1="165" x2="200" y2="275" stroke="#2B3648" stroke-width="2"/>
-        <line x1="320" y1="160" x2="270" y2="275" stroke="#2B3648" stroke-width="2"/>
-        <line x1="320" y1="160" x2="360" y2="275" stroke="#2B3648" stroke-width="2"/>
-        <circle cx="200" cy="40" r="26" fill="#60A5FA" opacity="0.95"/>
-        <circle cx="80" cy="160" r="19" fill="#2DD4BF" opacity="0.95"/>
-        <circle cx="200" cy="165" r="19" fill="#2DD4BF" opacity="0.95"/>
-        <circle cx="320" cy="160" r="19" fill="#2DD4BF" opacity="0.95"/>
-        <circle cx="40" cy="275" r="13" fill="#FBBF24" opacity="0.95"/>
-        <circle cx="130" cy="275" r="13" fill="#FBBF24" opacity="0.95"/>
-        <circle cx="200" cy="275" r="13" fill="#FBBF24" opacity="0.95"/>
-        <circle cx="270" cy="275" r="13" fill="#FBBF24" opacity="0.95"/>
-        <circle cx="360" cy="275" r="13" fill="#FBBF24" opacity="0.95"/>
-      </svg>
-      <div class="stage-label mono">DELEGATION TREE</div>
-    </div>`;
+    console.warn("[agentid] gate scene failed; fallback engaged:", err);
+    stage.innerHTML = `<div class="gate-fallback" id="gate-fallback"><div class="gf-ring" id="gf-ring"></div><div class="gf-caption mono" id="gf-caption">ALLOWED</div></div>`;
+    return null;
   }
 }
+for (const id of ids) document.getElementById(id)?.addEventListener("input", renderVerdict);
+document.getElementById("g-approval")?.addEventListener("click", () => {
+  const btn = document.getElementById("g-approval")!;
+  btn.setAttribute("aria-checked", btn.getAttribute("aria-checked") === "true" ? "false" : "true");
+  renderVerdict();
+});
+renderVerdict();
 
-// ── Try-it panel ────────────────────────────────────────────────
-try {
-  mountTryIt();
-} catch (err) {
-  console.error("[agentid] try-it failed to mount:", err);
-  const el = document.getElementById("tryit-out");
-  if (el) el.innerHTML = '<h3>Validation result</h3><p class="reason">Could not load the validator. Check the <a href="https://github.com/rajat397/agentid">repository</a>.</p>';
+/* ── scrollytelling: highlight the active step ────────────────── */
+const steps = document.querySelectorAll<HTMLElement>(".step");
+if (steps.length && "IntersectionObserver" in window) {
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) e.target.classList.toggle("active", e.isIntersecting);
+  }, { threshold: 0.45 });
+  steps.forEach((s) => io.observe(s));
 }
 
-// ── Header scroll state ─────────────────────────────────────────
+/* ── terminal: reveal lines on scroll ─────────────────────────── */
+const demoPre = document.getElementById("demo-capture");
+if (demoPre) {
+  // Wrap each line in a reveal span while preserving raw text
+  const lines = demoPre.textContent?.split("\n") ?? [];
+  demoPre.innerHTML = lines.map((l) => `<div class="line">${escapeHtml(l) || "&nbsp;"}</div>`).join("");
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {
+        demoPre.querySelectorAll<HTMLElement>(".line").forEach((line, i) => {
+          window.setTimeout(() => line.classList.add("on"), i * 18);
+        });
+        io.disconnect();
+      }
+    }
+  }, { threshold: 0.05 });
+  io.observe(demoPre);
+}
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* ── header scroll state ───────────────────────────────────────── */
 const header = document.getElementById("site-header");
 const onScroll = () => header?.classList.toggle("scrolled", window.scrollY > 24);
 window.addEventListener("scroll", onScroll, { passive: true });
