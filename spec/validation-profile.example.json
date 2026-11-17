@@ -1,0 +1,13 @@
+{
+  "uri": "https://example.invalid/profiles/agentic-v1.json",
+  "iss": "example-rp",
+  "max_clock_skew": 30,
+  "max_pop_window": 300,
+  "max_token_lifetime": 900,
+  "max_status_age": 60,
+  "max_chain_length": 3,
+  "predicates": ["eq", "max", "sum_max", "cosign_above", "window"],
+  "status_values": {
+    "0x02": "suspended"
+  }
+}

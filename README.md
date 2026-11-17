@@ -1,0 +1,117 @@
+# agentid
+
+**Identity, guardrails, reliability and traceability for software agents — with the evidence that makes it auditable.**
+
+`agentid` is a reference implementation of the identity and authorization layer that software agents need and that IAM-for-humans does not provide. It is small, typed, dependency-light (`cryptography` only), and built to make three questions answerable for any consequential agent action:
+
+1. **Which agent acted?**
+2. **Acting under whose authority?**
+3. **What was actually authorized — and can you prove it later?**
+
+> **Status: experimental reference implementation.** Not production-ready, not certified, not a commercial product yet. It exists so the rest of the industry — NIST, enterprises, other implementations — can hold something real instead of arguing about diagrams.
+
+---
+
+## The 30-second problem
+
+A mid-size retailer lets a marketing agent post to social channels and place small ad-credit purchases. A customer's support ticket contains text telling the agent to "buy the premium plan and post a discount code to the brand account." The agent complies. Nobody notices for 19 hours, because the only record is the agent's log, which says it "completed the task."
+
+When the security team asks *which agent made the purchase, which credential it used, and what else it touched during that window*, nobody can answer from a single system — and the fine print on their D&O insurance payout depends on being able to.
+
+That gap is this project. [The full NIST-grounded problem statement is in the architecture doc.](docs/architecture/overview.md)
+
+---
+
+## What this is NOT
+
+- **Not a commercial SaaS** — not yet, and not currently for sale.
+- **Not a hardened production proxy** — there is no sidecar in this repo yet.
+- **Not a standards body output** — it implements the *emerging* model (NIST's concept paper direction, OAuth Token Exchange, RFC 8693 `act` claims, and OTel's agent spans); nothing here is ratified.
+- **Not a substitute for a security review** — if you deploy it, you still owe your own threat modelling. See [threat-model.md](docs/security/threat-model.md).
+- **Not tamper-*proof* storage** — receipts are tamper-*evident* (hash-chained), not tamper-proof.
+
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/rajat397/agentid.git
+cd agentid
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .[dev]
+pytest                    # 10 tests, all passing
+agentid demo              # the full flow, end to end
+agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
+agentid profile           # the example Validation Profile + its digest
+pip install -e .[otel] && python -c "from agentid import otel; print('OTel emitter ready')"
+```
+
+Requires Python ≥ 3.10 and one dependency (`cryptography`).
+
+The demo runs a complete lifecycle — an agent issues a delegation with a hard scope, a consequential action is attempted, the observation is denied and logged, the four questions are answered from receipts, the chain is verified — and prints every step. Nothing about it is mocked or animated; `agentid demo` is the same code the tests exercise.
+
+---
+
+## Architecture in one paragraph
+
+Human grants → signed **delegation** with explicit `(action, system)` permission pairs, a hard amount cap, and an approval threshold → agent receives a constrained token (RFC 8693 token exchange, `act` claim) → **Policy Enforcement Point** gates the action and emits a signed, hash-chained **receipt** → **Policy Decision Point** evaluates constraints, produces obligations (budget, co-signature) or `valid / invalid / indeterminate`. Ledgers are append-only. Receipts name the Validation Profile digest, so a decision can be re-derived offline. Full component diagram, threat model and constraints in [architecture/overview.md](docs/architecture/overview.md).
+
+## Evidence, not adjectives
+
+Every claim this repository makes about a standard was checked against the normative text. The working record is published as [reference/standards-matrix.md](docs/reference/standards-matrix.md) (with honest rows for what we don't do) and the audit trail of that verification is in [reference/verification-log.md](docs/reference/verification-log.md) — including where the first draft of our own design was wrong.
+
+- **M1** — credential leakage detection, revocation and denial with receipt
+- **M2** — audit trail reconstruction: four questions answerable, chain integrity under tampering
+- **M3** — GDPR right-to-erasure enumeration with a one-month deadline tracked
+
+## Docs
+
+| Document | What it gives you |
+|---|---|
+| [architecture/overview.md](docs/architecture/overview.md) | The system: components, constraints, flows, the open questions |
+| [reference/standards-matrix.md](docs/reference/standards-matrix.md) | Every NIST statement → what this implementation does about it |
+| [security/threat-model.md](docs/security/threat-model.md) | Trust zones, ten threats, control mappings, the three mutants |
+| [api/core-api.md](docs/api/core-api.md) · [api/errors.md](docs/api/errors.md) | Interface contract and error model (not a stable API — yet) |
+| [reference/verification-log.md](docs/reference/verification-log.md) | Every claim checked against its source, line by line |
+
+## What exists today
+
+- **Reference profile** — a content-addressed, versioned `ValidationProfile`
+  (URI + SHA-256 digest) the receipts and audit trail point at.
+- **Signed delegation chain** — ES256 signatures over a human→agent grant,
+  with explicit `(action, system)` permissions, hard caps, approval
+  thresholds, and expiry.
+- **Budget-enforced entitlements** — `max_amount` and `sum_max` budget
+  accounting; an child grant can never widen its parent's authority.
+- **Deterministic validator** — returns `valid / invalid / indeterminate`
+  with obligations listed, per the emerging agent-delegation model.
+- **Hash-chained receipts** — tamper-evident ledger; a tampered receipt
+  breaks verification.
+- **Three mutants, executable** — leaked credential revoked and denied with
+  a receipt; incident reconstructable from receipts alone; a right-to-erasure
+  plan for personal data touched by agents.
+- **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
+  `gen_ai.agent.identity.*` attributes, marked Development.
+
+## Roadmap
+
+Still ahead (clearly not built yet):
+
+- **Enforcement point** — a sidecar / MCP wrapper so credentials are held by
+  the enforcement point, not the agent.
+- **Hosted evidence plane** — reproducible archive for receipts and profiles
+  with persistent chain verification — planned, not built.
+- **Erasure flow against real downstream systems** — the current erasure
+  path is a planner and printer, not a production deletion service.
+
+Contributions and critique are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Contact
+
+- **Security issues:** super.agent.universe@gmail.com (see [SECURITY.md](SECURITY.md))
+- **Bugs / feature requests:** GitHub issues
+- **Design discussion:** open an issue; be specific about which constraint you disagree with
+
+## License
+
+MIT — see [LICENSE](LICENSE). Attribution to the standards bodies whose documents this implements is in the docs.
