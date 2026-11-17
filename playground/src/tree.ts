@@ -96,8 +96,8 @@ export function mountTree(container: HTMLElement): void {
   const pMat = new THREE.PointsMaterial({ color: 0x334155, size: 0.035, transparent: true, opacity: 0.9 });
   scene.add(new THREE.Points(pGeo, pMat));
 
-  // Scroll growth: nodes fade/grow in from root downward
-  let reveal = 0;
+  // Hero: tree starts fully grown. Scroll adds drift only.
+  let reveal = 1;
   const targetReveal = () => {
     const el = container;
     const rect = el.getBoundingClientRect();
