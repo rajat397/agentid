@@ -5,6 +5,8 @@ Commands:
   demo                           run the full lifecycle end to end and print it
   erasure <subject> [--demo]     enumerate receipts touching a personal-data subject and plan erasure
   profile                        print the example Validation Profile and its digest
+  anchor --demo [--tsa URL]      anchor the demo ledger head with an RFC 3161 TSA
+  verify-anchor --file F --ledger L   verify anchors against a ledger file
 """
 
 import argparse
@@ -38,6 +40,98 @@ def _iso(minutes_from_now: int) -> str:
 def cmd_version() -> int:
     print(f"agentid {__version__}")
     return 0
+
+
+def build_demo_ledger() -> Ledger:
+    """A deterministic-shape demo ledger: grant, denial, allowed action (2 receipts, untampered)."""
+    from .profile import ValidationProfile
+    from .flow import act
+    from .delegation import create_delegation
+
+    profile = ValidationProfile.example()
+    priv, pub = new_keys()
+    ledger = Ledger()
+    delegation = create_delegation(
+        priv,
+        subject={"type": "human", "id": "oidc|acme-retail|usr_8842"},
+        actor_id="marketing-agent",
+        constraints={
+            "permissions": [{"action": "ad.credit.purchase", "system": "meta-ads"}],
+            "max_amount": {"value": "2000.00", "currency": "USD"},
+            "requires_human_approval_above": {"value": "500.00", "currency": "USD"},
+        },
+        expires_at=_iso(30),
+    )
+    act(ledger, [delegation],
+        {"action": "ad.credit.purchase", "system": "meta-ads", "amount": "4500.00",
+         "currency": "USD", "resource_type": "ad_credit_account",
+         "resource_id": "acme_retail_meta", "external_ref": "meta_ad_order_993812",
+         "personal_data_refs": ["cust_4471"]},
+        profile, pub)
+    approval = {
+        "id": "apr_01DEMO", "delegation_id": delegation.id,
+        "action": "ad.credit.purchase", "amount": "2000.00",
+        "approver": "oidc|acme-retail|usr_8842", "nonce": "nonce-demo",
+        "method": "oidc_consent", "acr": "urn:mace:incommon:iap:silver",
+    }
+    act(ledger, [delegation],
+        {"action": "ad.credit.purchase", "system": "meta-ads", "amount": "2000.00",
+         "currency": "USD", "resource_type": "ad_credit_account",
+         "resource_id": "acme_retail_meta", "external_ref": "meta_ad_order_993813",
+         "personal_data_refs": ["cust_4471"]},
+        profile, pub, approval=approval)
+    return ledger
+
+
+def cmd_anchor(out: str, tsa: str, demo: bool) -> int:
+    from dataclasses import asdict
+    from .anchor import anchor_ledger, DEFAULT_TSA
+    if not demo:
+        print("anchor requires a ledger; this CLI anchors the demo ledger. "
+              "Library use: agentid.anchor.anchor_ledger(ledger).", file=sys.stderr)
+        return 2
+    ledger = build_demo_ledger()
+    print(f"anchoring chain head {ledger.receipts[-1].hash[:16]}… via {tsa}")
+    try:
+        record = anchor_ledger(ledger, tsa_url=tsa)
+    except Exception as exc:
+        print(f"anchor failed: {exc}", file=sys.stderr)
+        return 1
+    receipts_path = out + ".ledger.jsonl"
+    with open(receipts_path, "w", encoding="utf-8") as fh:
+        for r in ledger.receipts:
+            fh.write(json.dumps(asdict(r), sort_keys=True) + "\n")
+    with open(out, "a", encoding="utf-8") as fh:
+        fh.write(record.to_jsonl() + "\n")
+    print(json.dumps(record.to_dict(), indent=2, sort_keys=True))
+    print(f"ledger receipts written to {receipts_path}")
+    print(f"anchor record appended to {out}")
+    return 0
+
+
+def cmd_verify_anchor(file: str, ledger_path: str) -> int:
+    from .anchor import load_anchors, verify_anchor
+    from .receipt import Receipt
+    if not Path(ledger_path).exists():
+        print(f"ledger file not found: {ledger_path}", file=sys.stderr)
+        return 2
+    with open(ledger_path, "r", encoding="utf-8") as fh:
+        receipts = [Receipt(**json.loads(line)) for line in fh if line.strip()]
+    ledger = Ledger(receipts=receipts)
+    anchors = load_anchors(file)
+    if not anchors:
+        print("no anchors in file", file=sys.stderr)
+        return 2
+    ok = 0
+    for i, rec in enumerate(anchors):
+        good, problems = verify_anchor(rec, ledger)
+        status = "VERIFIED" if good else "FAILED"
+        print(f"anchor[{i}] {status}  head={rec.get('head_hash', '')[:16]}…  gen_time={rec.get('gen_time')}")
+        for p in problems:
+            print(f"         - {p}")
+        ok += 1 if good else 0
+    print(f"{ok}/{len(anchors)} anchors verify")
+    return 0 if ok == len(anchors) else 1
 
 
 def cmd_demo() -> int:
@@ -175,6 +269,13 @@ def main(argv=None):
     e.add_argument("subject")
     e.add_argument("--demo", action="store_true", help="seed a two-ticket demo ledger")
     sub.add_parser("profile")
+    a = sub.add_parser("anchor", help="anchor the demo ledger head with an RFC 3161 TSA")
+    a.add_argument("--demo", action="store_true", help="anchor the built-in demo ledger")
+    a.add_argument("--tsa", default="https://freetsa.org/tsr", help="RFC 3161 TSA URL")
+    a.add_argument("--out", default="anchors.jsonl", help="anchors output file (append)")
+    v = sub.add_parser("verify-anchor", help="verify an anchors file against a ledger file")
+    v.add_argument("--file", default="anchors.jsonl")
+    v.add_argument("--ledger", default="anchors.jsonl.ledger.jsonl")
     args = p.parse_args(argv)
     if args.cmd == "version":
         return cmd_version()
@@ -184,6 +285,10 @@ def main(argv=None):
         return cmd_erasure(args.subject, args.demo)
     if args.cmd == "profile":
         return cmd_profile()
+    if args.cmd == "anchor":
+        return cmd_anchor(args.out, args.tsa, args.demo)
+    if args.cmd == "verify-anchor":
+        return cmd_verify_anchor(args.file, args.ledger)
     return 1
 
 

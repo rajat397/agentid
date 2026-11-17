@@ -4,6 +4,14 @@
 **Methodology:** STRIDE per component, plus trust-boundary analysis, plus abuse-case enumeration derived from the NIST NCCoE concept paper's failure modes.
 **Scope:** V1 — enterprise-controlled agents, single trust domain, Modes 3/5/6 primarily.
 
+> **Scope of this threat model.** This models the **target control plane** described in
+> `docs/architecture/overview.md` — the system with SPIRE attestation, the sidecar PEP, KMS-held
+> keys and the control plane services. The repository implements the M1–M3 slice plus the
+> Validation Profile, receipt ledger, erasure planner, OTel emitter and RFC 3161 anchoring; it
+> does not ship the sidecar, SPIRE integration, NGAC or KMS/HSM. Threats whose controls live in
+> those components do not have code in this repo yet — each such control is marked as an
+> architectural commitment, not an implementation.
+
 ---
 
 ## 1. System model

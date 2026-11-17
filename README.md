@@ -39,10 +39,12 @@ git clone https://github.com/rajat397/agentid.git
 cd agentid
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
-pytest                    # 10 tests, all passing
+pytest                    # 24 tests, all passing (fixtures offline)
 agentid demo              # the full flow, end to end
 agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
 agentid profile           # the example Validation Profile + its digest
+agentid anchor --demo     # RFC 3161 timestamp over the ledger head (one-time network call)
+agentid verify-anchor     # verify anchors offline against the demo ledger
 pip install -e .[otel] && python -c "from agentid import otel; print('OTel emitter ready')"
 ```
 
@@ -70,6 +72,7 @@ Every claim this repository makes about a standard was checked against the norma
 |---|---|
 | [architecture/overview.md](docs/architecture/overview.md) | The system: components, constraints, flows, the open questions |
 | [reference/standards-matrix.md](docs/reference/standards-matrix.md) | Every NIST statement → what this implementation does about it |
+| [reference/long-horizon-evidence.md](docs/reference/long-horizon-evidence.md) | RFC 3161 anchoring: design, commands, limits |
 | [security/threat-model.md](docs/security/threat-model.md) | Trust zones, ten threats, control mappings, the three mutants |
 | [api/core-api.md](docs/api/core-api.md) · [api/errors.md](docs/api/errors.md) | Interface contract and error model (not a stable API — yet) |
 | [reference/verification-log.md](docs/reference/verification-log.md) | Every claim checked against its source, line by line |
@@ -92,6 +95,11 @@ Every claim this repository makes about a standard was checked against the norma
   plan for personal data touched by agents.
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **RFC 3161 long-horizon evidence** — the ledger head (which commits to
+  every earlier receipt) is counter-signed by an independent TSA (default
+  FreeTSA); anchors are stored verbatim and re-verified offline. Receipts
+  are short-lived for live enforcement and durable for audit — the tension
+  NISTIR 8587 names, handled in code.
 
 ## Roadmap
 

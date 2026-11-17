@@ -7,6 +7,17 @@ This document is the credibility anchor for the project. It demonstrates, line b
 
 ---
 
+> **Scope of this matrix.** This is the design map between NIST's questions and the
+> architecture in `docs/architecture/overview.md` — the target system the rest of this
+> documentation describes. Rows marked **Implemented** describe that architecture and the
+> slice of it this repository actually builds and tests: the Validation Profile, the
+> deterministic validator, hash-chained receipts and ledger, credential revocation, the
+> erasure planner, the OTel emitter, and RFC 3161 anchoring
+> (`src/agentid/anchor.py`). The remaining components (SPIRE attestation, NGAC, KMS/HSM,
+> the enforcement sidecar) are architectural commitments with named designs, **not code in
+> this repo**. Nothing here should be read as “this code is in production” — see README,
+> “What exists today”.
+
 ## 1. How to read this matrix
 
 Each row is a direct statement from the concept paper, with its page reference, followed by our implementation decision and its status.
@@ -60,9 +71,9 @@ NIST's seven authorization sub-questions, mapped one-to-one. This is the densest
 
 | # | NIST question | Our implementation | Status |
 |---|---|---|---|
-| L.1 | "How can we ensure that agents log their actions and intent in a tamper-proof and verifiable manner?" | Append-only, hash-chained ledger per fleet. Agents never write it — the PEP does. Chain head externally anchorable. `GET /receipts/verify` recomputes and reports; offline verification supported against a published key set. | **Implemented** |
+| L.1 | "How can we ensure that agents log their actions and intent in a tamper-proof and verifiable manner?" | Append-only, hash-chained ledger per fleet. Agents never write it — the PEP does. Chain head externally anchorable — `agentid.anchor` counter-signs the chain head with an independent RFC 3161 TSA (default FreeTSA) and `verify_anchor` re-checks the binding offline (`src/agentid/anchor.py`, `tests/test_anchor.py`). | **Implemented** |
 | L.2 | "How do we ensure non-repudiation for agent actions and binding back to human authorization?" | Every receipt references a `delegation_id`; every delegation references an `approval` record; every approval records who approved, when, method, and context. The chain is hash-linked so no link can be silently broken. | **Implemented** |
-| L.3 | Tamper-evidence vs. tamper-proofing — *our honest framing* | We deliver **tamper-evidence with external anchoring**, not tamper-proofing in the absolute sense. A fully compromised control plane could rewrite unanchored history; anchoring prevents that from being undetectable. This distinction is stated in every customer-facing artifact. | **Implemented** |
+| L.3 | Tamper-evidence vs. tamper-proofing — *our honest framing* | We deliver **tamper-evidence with external anchoring**, not tamper-proofing in the absolute sense. A fully compromised control plane could rewrite unanchored history; anchoring (RFC 3161 timestamp over the chain head) prevents that from being undetectable; the anchor is reproducible by any party holding the ledger and the TSA's response. This distinction is stated in every customer-facing artifact. | **Implemented** |
 | L.4 | Log intent, not just action | Receipts carry the action type, resource attributes, constraint evaluations, and outcome. The delegation carries the authorized intent. Both are retained. | **Implemented** |
 
 ### 2.5 Prompt injection prevention and mitigation (p.6)

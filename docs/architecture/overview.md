@@ -5,6 +5,10 @@
 **Standards implemented:** MCP · OAuth 2.1 (+ extensions) · OIDC · SPIFFE/SPIRE · SCIM · NGAC
 **Primary source:** NIST NCCoE concept paper, "Accelerating the Adoption of Software and AI Agent Identity and Authorization" (DRAFT, February 2026)
 
+> **Scope note.** This describes the target control plane. What this repository implements is the
+> slice in README “What exists today” (Validation Profile, validator, receipt ledger, erasure
+> planner, OTel emitter, RFC 3161 anchoring). The remaining components are designs, not code.
+
 ---
 
 ## 1. Why this architecture exists
