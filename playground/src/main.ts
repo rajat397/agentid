@@ -58,6 +58,10 @@ renderVerdict();
 let threeMounted = false;
 toggleBtn?.addEventListener("click", async () => {
   if (!gateStage) return;
+  const setCanvasVisible = (show: boolean) => {
+    const canvas = gateStage.querySelector("canvas");
+    if (canvas) canvas.style.display = show ? "block" : "none";
+  };
   if (!threeMounted) {
     toggleBtn.disabled = true;
     toggleBtn.textContent = "loading 3D…";
@@ -68,6 +72,7 @@ toggleBtn?.addEventListener("click", async () => {
       gateSceneRef = scene;
       gateSceneRef.setVerdict(computeVerdict(state.amount, state.cap, state.threshold, state.approval));
       gateStage.classList.add("show3d");
+      setCanvasVisible(true);
       threeMounted = true;
       toggleBtn.textContent = "show 2D";
       toggleBtn.classList.add("on");
@@ -79,8 +84,10 @@ toggleBtn?.addEventListener("click", async () => {
     }
   } else {
     gateStage.classList.toggle("show3d");
-    toggleBtn.textContent = gateStage.classList.contains("show3d") ? "show 2D" : "show in 3D →";
-    toggleBtn.classList.toggle("on", gateStage.classList.contains("show3d"));
+    const show3d = gateStage.classList.contains("show3d");
+    setCanvasVisible(show3d);
+    toggleBtn.textContent = show3d ? "show 2D" : "show in 3D →";
+    toggleBtn.classList.toggle("on", show3d);
   }
 });
 
