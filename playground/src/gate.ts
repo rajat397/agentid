@@ -7,8 +7,9 @@ import * as THREE from "three";
  * closes/flares for rejected ones. Driven by the same slider state the
  * try-it validator uses.
  */
-export type GateVerdict = "valid" | "invalid" | "indeterminate";
-export interface GateState { amount: number; cap: number; threshold: number; approval: boolean; }
+import { computeVerdict, type GateVerdict } from "./gate-core";
+export type { GateVerdict, GateState } from "./gate-core";
+export { computeVerdict };
 
 const VERTEX = `
 uniform float uTime;
@@ -170,8 +171,3 @@ export class GateScene {
   }
 }
 
-export function computeVerdict(amount: number, cap: number, threshold: number, approval: boolean): GateVerdict {
-  if (amount > cap) return "invalid";
-  if (amount > threshold && !approval) return "indeterminate";
-  return "valid";
-}
