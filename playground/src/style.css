@@ -52,7 +52,7 @@ nav a:hover { color: var(--ink); }
 .eyebrow { font-family: monospace; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: .6rem; }
 .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 9px var(--green); }
 h1 { font-size: clamp(2.6rem, 5.4vw, 4.2rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 650; margin: 1.1rem 0 1.3rem; }
-.line { display: block; }
+.hline { display: block; }
 .grad { background: linear-gradient(118deg, #ffffff 15%, #9ff5e0 60%, var(--accent) 110%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .sub { font-size: 1.1rem; color: var(--dim); max-width: 46ch; }
 .sub em { color: var(--ink); font-style: normal; border-bottom: 1px solid var(--accent); }
