@@ -214,3 +214,26 @@ func VerifyStatusTokenAtIssuedTime(token string, publicKeys map[string]string,
 	}
 	return VerifyStatusToken(token, publicKeys, intValue(AsMap(value)["iat"]), maxStatusAge)
 }
+
+// CheckStatusAtIssuedTime resolves a status index for archived/offline tokens.
+func CheckStatusAtIssuedTime(token string, idx int, publicKeys map[string]string,
+	maxStatusAge int) (int, error) {
+	payload, err := VerifyStatusTokenAtIssuedTime(token, publicKeys, maxStatusAge)
+	if err != nil {
+		return 0, err
+	}
+	count := intValue(payload["status_count"])
+	if idx < 0 || idx >= count {
+		return 0, fmt.Errorf("status index %d out of range", idx)
+	}
+	return decodeStatusAt(payload, idx)
+}
+
+func decodeStatusAt(payload map[string]any, idx int) (int, error) {
+	count := intValue(payload["status_count"])
+	statuses, err := DecodeStatusList(AsMap(payload["status_list"]), count)
+	if err != nil {
+		return 0, err
+	}
+	return statuses[idx], nil
+}

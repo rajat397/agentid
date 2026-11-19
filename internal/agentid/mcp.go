@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 
 	"encoding/base64"
 	"strings"
@@ -52,6 +53,7 @@ type MCPWrapper struct {
 	ledger       *Ledger
 	statusLookup func(uri string, idx int) (int, error)
 	httpClient   *http.Client
+	mu           sync.RWMutex
 }
 
 // NewMCPWrapper validates configuration and installs fail-closed revocation
@@ -132,10 +134,11 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 	if err != nil {
 		return rpcError(id, -32602, "invalid arguments: "+err.Error(), "")
 	}
+	statusLookup := w.currentStatusLookup()
 	_, result, err := Act(w.ledger, w.config.Chain, action, w.config.Profile,
 		w.config.RootKeyPEM, ActOptions{
 			Fleet: w.config.Fleet, Signer: w.config.Signer,
-			Approval: w.config.Approval, StatusLookup: w.statusLookup,
+			Approval: w.config.Approval, StatusLookup: statusLookup,
 		})
 	if err != nil {
 		return rpcError(id, -32000, "receipt failed: "+err.Error(), "")
@@ -398,4 +401,25 @@ func LoadMCPWrapper(path string) (*MCPWrapper, error) {
 		config.Approval = AsMap(value)
 	}
 	return NewMCPWrapper(config)
+}
+
+func (w *MCPWrapper) currentStatusLookup() func(string, int) (int, error) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.statusLookup
+}
+
+// RefreshStatus atomically swaps the PEP's status token. A stale or malformed
+// token is rejected without disturbing the running lookup.
+func (w *MCPWrapper) RefreshStatus(token string, keys map[string]string, maxAge int) error {
+	if _, err := VerifyStatusTokenAtIssuedTime(token, keys, maxAge); err != nil {
+		return err
+	}
+	lookup := func(uri string, idx int) (int, error) {
+		return checkStatusAtIssuedTime(token, idx, keys, maxAge)
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.statusLookup = lookup
+	return nil
 }

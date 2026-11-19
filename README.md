@@ -37,7 +37,7 @@ That gap is this project. [The full NIST-grounded problem statement is in the ar
 ```bash
 git clone https://github.com/rajat397/agentid.git
 cd agentid
-go test ./...
+go test ./...                         # includes integration/offboarding scenario
 go build -o agentid ./cmd/agentid
 ./agentid demo
 ./agentid erasure cust_4471 --demo
@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Revocation registry + integration harness** — single-writer registry,
+  signed status publication, live PEP refresh; real-world offboarding scenario
+  is the test-first template. See [reference/registry.md](docs/reference/registry.md).
 - **Agent versioning** — signed `actor.version` per hop and drift obligations
   in receipts. See [reference/agent-versioning.md](docs/reference/agent-versioning.md).
 - **Cross-RP budgets** — stateful `sum_max` keyed by (budget key, audience)

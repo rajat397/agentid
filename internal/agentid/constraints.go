@@ -362,3 +362,6 @@ func sortedKeys(m map[string]any) []string {
 	sort.Strings(keys)
 	return keys
 }
+
+// IntValue coerces decoded JSON numeric values to int for integration harnesses.
+func IntValue(value any) int { return intValue(value) }
