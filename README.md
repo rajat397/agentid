@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Pipeline stages** — signed stage ceilings (`plan ⊑ read ⊑ write ⊑
+  side_effect`) with profile allowlists and monotonic attenuation. See
+  [reference/stages.md](docs/reference/stages.md).
 - **Provenance taint** — deterministic two-point lattice for injection-aware
   authorization; untrusted actions require an envelope-bound acknowledgement.
   See [reference/provenance.md](docs/reference/provenance.md).

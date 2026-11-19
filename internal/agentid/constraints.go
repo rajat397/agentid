@@ -258,6 +258,11 @@ func AttenuationViolation(child, parent map[string]any) string {
 			return "attenuation violated: child permissions exceed parent"
 		}
 	}
+	parentStage := stringField(parent, "stage")
+	childStage := stringField(child, "stage")
+	if parentStage != "" && !StageWithin(parentStage, childStage) {
+		return "attenuation violated: child stage exceeds parent stage ceiling"
+	}
 	for _, pa := range parentAtoms {
 		found := false
 		for _, ca := range childAtoms {

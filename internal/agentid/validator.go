@@ -195,6 +195,42 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 		return fail(err.Error())
 	}
 	obligations := []any{}
+	ceiling := stringField(leaf.Constraints, "stage")
+	if ceiling != "" || len(profile.StageAllowlist) > 0 {
+		if !StageIsValid(envelope.Stage) {
+			return ValidationResult{
+				Outcome: "invalid", Reason: "action stage is missing or unknown",
+				ConstraintsEvaluated: evaluated,
+			}
+		}
+		if ceiling != "" && !StageWithin(ceiling, envelope.Stage) {
+			return ValidationResult{
+				Outcome:              "invalid",
+				Reason:               "action stage " + envelope.Stage + " exceeds delegation ceiling " + ceiling,
+				ConstraintsEvaluated: evaluated,
+			}
+		}
+		if len(profile.StageAllowlist) > 0 {
+			allowed := false
+			for _, stage := range profile.StageAllowlist {
+				if stage == envelope.Stage {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				return ValidationResult{
+					Outcome:              "invalid",
+					Reason:               "action stage " + envelope.Stage + " not in profile allowlist",
+					ConstraintsEvaluated: evaluated,
+				}
+			}
+		}
+		evaluated = append(evaluated, map[string]any{
+			"constraint": "stage", "stage": envelope.Stage, "ceiling": ceiling,
+			"satisfied": true,
+		})
+	}
 	if profile.RequireTrustedProvenance {
 		provenance := stringValue(envelope.Attributes["provenance"])
 		if provenance != ProvenanceTrusted {

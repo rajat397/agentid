@@ -9,6 +9,7 @@
   "predicates": ["eq", "in", "max", "min", "window", "sum_max", "cosign_above"],
   "pq_sign": true,
   "require_trusted_provenance": false,
+  "stage_allowlist": [],
   "status_values": {
     "0x02": "suspended"
   }

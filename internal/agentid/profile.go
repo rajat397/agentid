@@ -18,6 +18,7 @@ type Profile struct {
 	SignatureAlgs            []string
 	PQSign                   bool
 	RequireTrustedProvenance bool
+	StageAllowlist           []string
 }
 
 func (p Profile) document() map[string]any {
@@ -33,6 +34,7 @@ func (p Profile) document() map[string]any {
 		"signature_algs":             p.SignatureAlgs,
 		"pq_sign":                    p.PQSign,
 		"require_trusted_provenance": p.RequireTrustedProvenance,
+		"stage_allowlist":            p.StageAllowlist,
 	}
 }
 
@@ -69,6 +71,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 	if rawStatus, ok := raw["status_values"].(map[string]any); ok {
 		status = rawStatus
 	}
+	stageAllowlist := stringList(raw["stage_allowlist"])
 	requireTrusted := false
 	if value, ok := raw["require_trusted_provenance"]; ok {
 		if flag, ok := value.(bool); ok {
@@ -94,6 +97,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		SignatureAlgs:            algs,
 		PQSign:                   pqSign,
 		RequireTrustedProvenance: requireTrusted,
+		StageAllowlist:           stageAllowlist,
 	}, nil
 }
 
@@ -140,8 +144,14 @@ func (p Profile) AllowsPQ() bool { return p.PQSign }
 func stringList(value any) []string {
 	switch items := value.(type) {
 	case []string:
+		if items == nil {
+			return nil
+		}
 		return append([]string{}, items...)
 	case []any:
+		if items == nil {
+			return nil
+		}
 		out := make([]string, 0, len(items))
 		for _, item := range items {
 			out = append(out, stringValue(item))

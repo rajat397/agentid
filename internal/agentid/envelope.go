@@ -7,6 +7,7 @@ import (
 var reservedEnvelopeKeys = map[string]bool{
 	"action": true, "system": true, "resource_type": true,
 	"resource_id": true, "nonce": true, "external_ref": true,
+	"stage": true,
 }
 
 // Envelope is the canonical unit of approval, validation and receipt.
@@ -16,6 +17,7 @@ type Envelope struct {
 	Resource   map[string]any
 	Attributes map[string]any
 	Nonce      any
+	Stage      string
 }
 
 // BuildEnvelope projects a flat action request into the canonical envelope.
@@ -34,9 +36,11 @@ func BuildEnvelope(request map[string]any) (Envelope, error) {
 			attributes[key] = value
 		}
 	}
+	stage, _ := request["stage"].(string)
 	return Envelope{
 		Action: action,
 		System: system,
+		Stage:  stage,
 		Resource: map[string]any{
 			"type": request["resource_type"],
 			"id":   request["resource_id"],
@@ -48,13 +52,17 @@ func BuildEnvelope(request map[string]any) (Envelope, error) {
 
 // ToMap produces the exact structure hashed for envelope digests.
 func (e Envelope) ToMap() map[string]any {
-	return map[string]any{
+	out := map[string]any{
 		"action":     e.Action,
 		"system":     e.System,
 		"resource":   e.Resource,
 		"attributes": e.Attributes,
 		"nonce":      e.Nonce,
 	}
+	if e.Stage != "" {
+		out["stage"] = e.Stage
+	}
+	return out
 }
 
 // EnvelopeDigest is the content-address of a canonical action envelope.

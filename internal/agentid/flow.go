@@ -102,6 +102,7 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 		DelegationID: leaf.ID,
 		Action:       stringField(action, "action"),
 		Resource: map[string]any{
+			"stage":      envelope.Stage,
 			"type":       action["resource_type"],
 			"id":         action["resource_id"],
 			"attributes": attributes,
