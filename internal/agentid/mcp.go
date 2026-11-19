@@ -423,3 +423,6 @@ func (w *MCPWrapper) RefreshStatus(token string, keys map[string]string, maxAge 
 	w.statusLookup = lookup
 	return nil
 }
+
+// Ledger returns the wrapper's receipt ledger for evidence export and anchoring.
+func (w *MCPWrapper) Ledger() *Ledger { return w.ledger }

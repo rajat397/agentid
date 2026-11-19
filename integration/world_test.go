@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -26,9 +27,16 @@ type World struct {
 	wrapper     *agentid.MCPWrapper
 	adsCalls    *int64
 	scimActive  *atomic.Bool
+	tsaURL      string
+	anchorMgr   interface {
+		Observe(*agentid.Ledger, string) ([]map[string]any, error)
+	}
 	scimClient  agentid.SCIMClient
 	registry    *agentid.FileRegistry
 	publisher   agentid.StatusPublisher
+	anchors     []map[string]any
+	mockTSAFail *atomic.Bool
+	ledger      *agentid.Ledger
 	ledgerPath  string
 }
 
@@ -63,6 +71,29 @@ func NewWorld(t *testing.T) *World {
 	}))
 	t.Cleanup(scim.Close)
 	scimClient := agentid.SCIMClient{BaseURL: scim.URL}
+	worldLedger := &agentid.Ledger{}
+	tsaFail := atomic.Bool{}
+	tsa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if tsaFail.Load() {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		body, _ := io.ReadAll(r.Body)
+		_ = body
+		ledgerHead := "0"
+		if head, err := agentid.ChainHead(worldLedger); err == nil {
+			ledgerHead = head
+		}
+		response, err := agentid.BuildMockTimestampResponse(ledgerHead,
+			"20261120000000Z", 12345)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/timestamp-reply")
+		w.Write(response)
+	}))
+	t.Cleanup(tsa.Close)
 
 	privatePEM, publicPEM, err := agentid.GenerateKeyPair()
 	if err != nil {
@@ -120,13 +151,22 @@ func NewWorld(t *testing.T) *World {
 	if err != nil {
 		t.Fatal(err)
 	}
+	worldLedger = wrapper.Ledger()
+	manager, err := agentid.NewAnchorManager(agentid.AnchorConfig{
+		TSAURL: tsa.URL, StrictCA: true,
+		Cadence: agentid.AnchorCadence{MaxReceipts: 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	return &World{
 		t: t, signer: signer, rootPub: publicPEM, delegation: delegation,
 		profile: profile, statusToken: token, statusKeys: signer.PublicKeys(),
 		statuses: statuses, wrapper: wrapper, adsCalls: &adsCalls,
 		registry: registry, publisher: publisher,
 		scimActive: &active, scimClient: scimClient,
-		ledgerPath: t.TempDir() + "/ledger.jsonl",
+		anchorMgr: manager, tsaURL: tsa.URL, mockTSAFail: &tsaFail,
+		ledger: worldLedger, ledgerPath: t.TempDir() + "/ledger.jsonl",
 	}
 }
 
@@ -205,5 +245,34 @@ func (w *World) RefreshWrapper() {
 	w.statusToken = token
 	if err := w.wrapper.RefreshStatus(token, w.statusKeys, w.profile.MaxStatusAge); err != nil {
 		w.t.Fatal(err)
+	}
+}
+
+func (w *World) ObserveAnchors() {
+	w.t.Helper()
+	anchors, err := w.anchorMgr.Observe(w.ledger, w.tsaURL)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	w.anchors = anchors
+}
+
+func (w *World) FailTSA() { w.mockTSAFail.Store(true) }
+func (w *World) FixTSA()  { w.mockTSAFail.Store(false) }
+
+func (w *World) DetectGaps(anchors []map[string]any) []string {
+	return agentid.DetectAnchorGaps(anchors, w.ledger)
+}
+
+func (w *World) VerifyAuditBundle() {
+	w.t.Helper()
+	bundle, err := agentid.BuildEvidenceBundle("integration", w.ledger,
+		[]agentid.Delegation{w.delegation}, w.profile, w.anchors, nil,
+		w.signer.PublicKeys())
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	if problems := agentid.VerifyEvidenceBundle(bundle); len(problems) > 0 {
+		w.t.Fatalf("auditor bundle failed: %v", problems)
 	}
 }

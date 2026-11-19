@@ -400,3 +400,34 @@ func AnchorLedger(ledger *Ledger, tsaURL string, timeout time.Duration) (map[str
 		"anchored_at": dateTimeNow().Format(timeLayout),
 	}, nil
 }
+
+// BuildMockTimestampResponse crafts a structurally valid TimeStampResp for a
+// given head digest. It is a test/demo utility: CMS chain-of-trust verification
+// against the TSA certificate is still an external openssl operation.
+func BuildMockTimestampResponse(headHash, genTime string, serial int64) ([]byte, error) {
+	digest, err := hex.DecodeString(headHash)
+	if err != nil || len(digest) != 32 {
+		return nil, errors.New("head must be a SHA-256 hex digest")
+	}
+	tstInfo := derSequence(concatBytes(
+		derInteger(1),
+		derOID("1.3.6.1.4.1.99999.1"),
+		derSequence(concatBytes(
+			derSequence(concatBytes(derOID(oidSHA256), derNull())),
+			derOctetString(digest),
+		)),
+		derInteger(serial),
+		tlv(0x18, []byte(genTime)),
+	))
+	status := derSequence(derInteger(0))
+	content := derSequence(concatBytes(derOID(oidTSTInfo), derOctetString(tstInfo)))
+	return derSequence(concatBytes(status, content)), nil
+}
+
+func concatBytes(parts ...[]byte) []byte {
+	out := []byte{}
+	for _, part := range parts {
+		out = append(out, part...)
+	}
+	return out
+}

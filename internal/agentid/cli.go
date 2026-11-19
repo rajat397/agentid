@@ -40,6 +40,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdMCPServe(args[1:], stdout, stderr)
 	case "mock-ads":
 		return cmdMockAds(args[1:], stdout, stderr)
+	case "anchor-watch":
+		return cmdAnchorWatch(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -653,4 +655,78 @@ func cmdMockAds(args []string, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "mock meta-ads mounted on %s\n", addr)
 	return serveError(http.ListenAndServe(addr, MockMetaAdsHandler(credential)))
+}
+
+func cmdAnchorWatch(args []string, stdout, stderr io.Writer) int {
+	ledgerPath, tsaURL, outPath := "", "", "anchors.jsonl"
+	every := 1
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--ledger":
+			if i+1 < len(args) {
+				i++
+				ledgerPath = args[i]
+			}
+		case "--tsa":
+			if i+1 < len(args) {
+				i++
+				tsaURL = args[i]
+			}
+		case "--every":
+			if i+1 < len(args) {
+				i++
+				every = intValue(args[i])
+			}
+		case "--out":
+			if i+1 < len(args) {
+				i++
+				outPath = args[i]
+			}
+		}
+	}
+	if ledgerPath == "" {
+		fmt.Fprintln(stderr, "anchor-watch requires --ledger <receipts.jsonl>")
+		return 2
+	}
+	ledger, err := loadLedgerFile(ledgerPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if every <= 0 {
+		every = 1
+	}
+	manager, err := NewAnchorManager(AnchorConfig{
+		TSAURL: tsaURL, StrictCA: true,
+		Cadence: AnchorCadence{MaxReceipts: every},
+	})
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	anchors, err := manager.Observe(ledger, "")
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	file, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	defer file.Close()
+	for _, anchor := range anchors {
+		data, err := CanonicalJSON(anchor)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		if _, err := file.Write(append(data, '\n')); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+	}
+	fmt.Fprintf(stdout, "%d anchors written to %s; %d pending retry\n",
+		len(anchors), outPath, len(manager.Pending()))
+	return 0
 }

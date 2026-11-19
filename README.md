@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Anchor manager** — cadence-based RFC 3161 anchoring with queued retries,
+  strict CA transport and auditor gap detection. See
+  [reference/anchor-manager.md](docs/reference/anchor-manager.md).
 - **Revocation registry + integration harness** — single-writer registry,
   signed status publication, live PEP refresh; real-world offboarding scenario
   is the test-first template. See [reference/registry.md](docs/reference/registry.md).
