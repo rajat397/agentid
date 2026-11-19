@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Policy-set combining** — profile-pinned deny-overrides across multiple
+  profiles with canonical obligation union and implicit deny. See
+  [reference/policy-combining.md](docs/reference/policy-combining.md).
 - **MCP wrapper PEP** — holds downstream credentials, maps `tools/call` into
   action envelopes, validates before any tool execution, and receipts every
   decision. See [reference/mcp-wrapper.md](docs/reference/mcp-wrapper.md).

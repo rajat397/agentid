@@ -25,6 +25,7 @@ type EvidenceBundle struct {
 	Receipts     []map[string]any
 	Delegations  []map[string]any
 	Profile      map[string]any
+	Profiles     []map[string]any
 	Anchors      []map[string]any
 	StatusTokens []string
 	SignerKeys   map[string]string
@@ -44,6 +45,9 @@ func (b EvidenceBundle) body() map[string]any {
 // ToMap returns the full bundle including its manifest.
 func (b EvidenceBundle) ToMap() map[string]any {
 	out := b.body()
+	if len(b.Profiles) > 0 {
+		out["profiles"] = b.Profiles
+	}
 	out["manifest"] = b.Manifest
 	return out
 }
@@ -52,11 +56,14 @@ func (b EvidenceBundle) ToMap() map[string]any {
 // tokens and the public-key registry into one verifiable artifact.
 func BuildEvidenceBundle(fleet string, ledger *Ledger, delegations []Delegation,
 	profile Profile, anchors []map[string]any, statusTokens []string,
-	extraKeys map[string]string) (EvidenceBundle, error) {
+	extraKeys map[string]string, extraProfiles ...Profile) (EvidenceBundle, error) {
 	bundle := EvidenceBundle{
 		Version: evidenceVersion, CreatedAt: dateTimeNow().Format(timeLayout),
 		Fleet: fleet, Profile: profile.Document(),
 		SignerKeys: map[string]string{},
+	}
+	for _, extra := range extraProfiles {
+		bundle.Profiles = append(bundle.Profiles, extra.Document())
 	}
 	for kid, material := range ledger.SignerKeys {
 		bundle.SignerKeys[kid] = material
@@ -84,6 +91,13 @@ func BuildEvidenceBundle(fleet string, ledger *Ledger, delegations []Delegation,
 	profileDigest, err := profile.Digest()
 	if err != nil {
 		return EvidenceBundle{}, err
+	}
+	if len(extraProfiles) > 0 {
+		all := append([]Profile{profile}, extraProfiles...)
+		profileDigest, err = PolicySetDigest(all)
+		if err != nil {
+			return EvidenceBundle{}, err
+		}
 	}
 	bundle.Manifest = map[string]any{
 		"digest": DigestSHA256(data), "receipt_count": len(bundle.Receipts),
@@ -116,7 +130,32 @@ func VerifyEvidenceBundle(bundle EvidenceBundle) []string {
 	if err != nil {
 		return append(problems, "bundle profile digest failed: "+err.Error())
 	}
-	if manifestProfile := stringField(bundle.Manifest, "profile_digest"); manifestProfile != profileDigest {
+	acceptedProfiles := map[string]bool{profileDigest: true}
+	for _, raw := range bundle.Profiles {
+		candidate, err := ProfileFromMap(AsMap(raw))
+		if err != nil {
+			problems = append(problems, "bundled profile invalid: "+err.Error())
+			continue
+		}
+		digest, err := candidate.Digest()
+		if err == nil {
+			acceptedProfiles[digest] = true
+		}
+	}
+	extraProfiles := bundle.Profiles
+	if len(extraProfiles) > 0 {
+		all := []Profile{profile}
+		for _, raw := range extraProfiles {
+			candidate, err := ProfileFromMap(AsMap(raw))
+			if err == nil {
+				all = append(all, candidate)
+			}
+		}
+		if setDigest, err := PolicySetDigest(all); err == nil {
+			acceptedProfiles[setDigest] = true
+		}
+	}
+	if manifestProfile := stringField(bundle.Manifest, "profile_digest"); !acceptedProfiles[manifestProfile] {
 		problems = append(problems, "manifest profile digest mismatch")
 	}
 
@@ -150,7 +189,7 @@ func VerifyEvidenceBundle(bundle EvidenceBundle) []string {
 			continue
 		}
 		decision := AsMap(receipt.Decision)
-		if got := stringField(decision, "profile_digest"); got != profileDigest {
+		if got := stringField(decision, "profile_digest"); !acceptedProfiles[got] {
 			problems = append(problems, fmt.Sprintf(
 				"receipt[%d] does not name the bundled profile", i))
 		}
@@ -268,6 +307,9 @@ func evidenceBundleFromMap(raw map[string]any) EvidenceBundle {
 	}
 	for _, item := range AsSlice(raw["delegations"]) {
 		bundle.Delegations = append(bundle.Delegations, AsMap(item))
+	}
+	for _, item := range AsSlice(raw["profiles"]) {
+		bundle.Profiles = append(bundle.Profiles, AsMap(item))
 	}
 	for _, item := range AsSlice(raw["anchors"]) {
 		bundle.Anchors = append(bundle.Anchors, AsMap(item))

@@ -19,6 +19,7 @@ type Profile struct {
 	PQSign                   bool
 	RequireTrustedProvenance bool
 	StageAllowlist           []string
+	Combining                string
 }
 
 func (p Profile) document() map[string]any {
@@ -35,6 +36,7 @@ func (p Profile) document() map[string]any {
 		"pq_sign":                    p.PQSign,
 		"require_trusted_provenance": p.RequireTrustedProvenance,
 		"stage_allowlist":            p.StageAllowlist,
+		"combining":                  p.Combining,
 	}
 }
 
@@ -72,6 +74,10 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		status = rawStatus
 	}
 	stageAllowlist := stringList(raw["stage_allowlist"])
+	combining := stringField(raw, "combining")
+	if combining == "" {
+		combining = CombiningDenyOverrides
+	}
 	requireTrusted := false
 	if value, ok := raw["require_trusted_provenance"]; ok {
 		if flag, ok := value.(bool); ok {
@@ -98,6 +104,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		PQSign:                   pqSign,
 		RequireTrustedProvenance: requireTrusted,
 		StageAllowlist:           stageAllowlist,
+		Combining:                combining,
 	}, nil
 }
 
@@ -115,6 +122,7 @@ func ExampleProfile() Profile {
 		StatusValues:     map[string]any{"0x02": "suspended"},
 		SignatureAlgs:    []string{"ES256"},
 		PQSign:           true,
+		Combining:        CombiningDenyOverrides,
 	}
 }
 

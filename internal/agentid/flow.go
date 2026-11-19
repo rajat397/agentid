@@ -7,14 +7,15 @@ import (
 
 // ActOptions carries optional evidence into the action path.
 type ActOptions struct {
-	Fleet        string
-	Approval     map[string]any
-	At           string
-	Revoked      map[string]bool
-	Signer       Signer
-	PQSigner     Signer
-	ExtraSigners []Signer
-	StatusLookup func(uri string, idx int) (int, error)
+	Fleet         string
+	Approval      map[string]any
+	At            string
+	Revoked       map[string]bool
+	Signer        Signer
+	PQSigner      Signer
+	ExtraSigners  []Signer
+	StatusLookup  func(uri string, idx int) (int, error)
+	ExtraProfiles []Profile
 }
 
 // Act validates an action, mints the receipt, and appends it to the ledger.
@@ -30,7 +31,23 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 	if opts.Signer != nil {
 		validationOpts.PublicKeys = opts.Signer.PublicKeys()
 	}
-	result := Validate(chain, action, profile, publicPEM, validationOpts)
+	profiles := append([]Profile{profile}, opts.ExtraProfiles...)
+	var err error
+	var result ValidationResult
+	var profileDigest string
+	if len(opts.ExtraProfiles) > 0 {
+		result, err = EvaluatePolicySet(chain, action, profiles, publicPEM, validationOpts)
+		if err != nil {
+			return nil, ValidationResult{}, err
+		}
+		profileDigest, err = PolicySetDigest(profiles)
+	} else {
+		result = Validate(chain, action, profile, publicPEM, validationOpts)
+		profileDigest, err = profile.Digest()
+	}
+	if err != nil {
+		return nil, ValidationResult{}, err
+	}
 
 	previous := "0000000000000000000000000000000000000000000000000000000000000000"
 	if len(ledger.Receipts) > 0 {
@@ -62,10 +79,6 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 		currency = "USD"
 	}
 	digest, err := EnvelopeDigest(action)
-	if err != nil {
-		return nil, ValidationResult{}, err
-	}
-	profileDigest, err := profile.Digest()
 	if err != nil {
 		return nil, ValidationResult{}, err
 	}
