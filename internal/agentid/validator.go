@@ -198,6 +198,23 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 		return fail(err.Error())
 	}
 	obligations := []any{}
+	pinnedAudience := stringField(leaf.Constraints, "aud")
+	actionAudience := stringValue(envelope.Attributes["aud"])
+	if pinnedAudience != "" && actionAudience != pinnedAudience {
+		return ValidationResult{Outcome: "invalid",
+			Reason: "aud pinning: action audience " + actionAudience +
+				" differs from grant audience " + pinnedAudience,
+			ConstraintsEvaluated: evaluated}
+	}
+	if pinnedAudience != "" {
+		evaluated = append(evaluated, map[string]any{
+			"constraint": "aud", "aud": pinnedAudience, "satisfied": true,
+		})
+	}
+	spendAudience := pinnedAudience
+	if spendAudience == "" {
+		spendAudience = actionAudience
+	}
 	ceiling := stringField(leaf.Constraints, "stage")
 	if ceiling != "" || len(profile.StageAllowlist) > 0 {
 		if !StageIsValid(envelope.Stage) {
@@ -310,7 +327,8 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 			}
 			spentString := "0.00"
 			if opts.Ledger != nil {
-				spentString, err = opts.Ledger.TotalFor(atom.Path, key, periodStart, currency)
+				spentString, err = opts.Ledger.TotalFor(
+					atom.Path, key, periodStart, currency, spendAudience)
 				if err != nil {
 					return fail("ledger sum failed: " + err.Error())
 				}

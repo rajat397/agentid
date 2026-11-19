@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Cross-RP budgets** — stateful `sum_max` keyed by (budget key, audience)
+  with delegation `aud` pinning and monotonic attenuation. See
+  [reference/cross-rp-budgets.md](docs/reference/cross-rp-budgets.md).
 - **Policy-set combining** — profile-pinned deny-overrides across multiple
   profiles with canonical obligation union and implicit deny. See
   [reference/policy-combining.md](docs/reference/policy-combining.md).

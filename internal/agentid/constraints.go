@@ -258,6 +258,11 @@ func AttenuationViolation(child, parent map[string]any) string {
 			return "attenuation violated: child permissions exceed parent"
 		}
 	}
+	parentAudience := stringField(parent, "aud")
+	childAudience := stringField(child, "aud")
+	if parentAudience != "" && childAudience != parentAudience {
+		return "attenuation violated: child audience differs from parent"
+	}
 	parentStage := stringField(parent, "stage")
 	childStage := stringField(child, "stage")
 	if parentStage != "" && !StageWithin(parentStage, childStage) {

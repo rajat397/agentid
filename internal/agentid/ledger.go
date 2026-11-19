@@ -122,7 +122,12 @@ func (l *Ledger) VerifyChain(publicKeys map[string]string) []string {
 }
 
 // TotalFor sums one numeric attribute path for a root key within a period.
-func (l *Ledger) TotalFor(path, key, periodStart string, currency *string) (string, error) {
+func (l *Ledger) TotalFor(path, key, periodStart string, currency *string,
+	audience ...string) (string, error) {
+	aud := ""
+	if len(audience) > 0 {
+		aud = audience[0]
+	}
 	total := new(big.Rat)
 	for _, receipt := range l.Receipts {
 		if stringField(receipt.Decision, "result") != "allowed" {
@@ -130,6 +135,9 @@ func (l *Ledger) TotalFor(path, key, periodStart string, currency *string) (stri
 		}
 		attributes := AsMap(AsMap(receipt.Resource)["attributes"])
 		if stringValue(attributes["budget_key"]) != key {
+			continue
+		}
+		if stringValue(attributes["aud"]) != aud {
 			continue
 		}
 		if currency != nil && stringValue(attributes["currency"]) != *currency {
