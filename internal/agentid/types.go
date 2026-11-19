@@ -1,0 +1,149 @@
+package agentid
+
+import (
+	"fmt"
+)
+
+// Delegation is one signed hop of the authority chain.
+type Delegation struct {
+	ID                 string
+	Subject            map[string]any
+	Actor              map[string]any
+	ParentDelegationID any
+	ChainDepth         int
+	Constraints        map[string]any
+	IssuedAt           string
+	ExpiresAt          string
+	Signature          Signature
+	Issuer             map[string]any
+	StatusList         map[string]any
+}
+
+// UnsignedBody is the exact signed payload, excluding the signature.
+func (d Delegation) UnsignedBody() map[string]any {
+	body := map[string]any{
+		"actor":                d.Actor,
+		"chain_depth":          d.ChainDepth,
+		"constraints":          d.Constraints,
+		"expires_at":           d.ExpiresAt,
+		"id":                   d.ID,
+		"issued_at":            d.IssuedAt,
+		"parent_delegation_id": d.ParentDelegationID,
+		"subject":              d.Subject,
+	}
+	if d.Issuer != nil {
+		body["issuer"] = d.Issuer
+	}
+	if d.StatusList != nil {
+		body["status_list"] = d.StatusList
+	}
+	return body
+}
+
+// DelegationFromMap reconstructs a delegation from a verified vector or store.
+func DelegationFromMap(raw map[string]any) (Delegation, error) {
+	if raw == nil {
+		return Delegation{}, fmt.Errorf("delegation must be an object")
+	}
+	depth := 0
+	if value, ok := raw["chain_depth"]; ok {
+		depth = intValue(value)
+	}
+	return Delegation{
+		ID:                 stringField(raw, "id"),
+		Subject:            AsMap(raw["subject"]),
+		Actor:              AsMap(raw["actor"]),
+		ParentDelegationID: raw["parent_delegation_id"],
+		ChainDepth:         depth,
+		Constraints:        AsMap(raw["constraints"]),
+		IssuedAt:           stringField(raw, "issued_at"),
+		ExpiresAt:          stringField(raw, "expires_at"),
+		Signature:          signatureFromMap(raw["signature"]),
+		Issuer:             AsMap(raw["issuer"]),
+		StatusList:         AsMap(raw["status_list"]),
+	}, nil
+}
+
+// Receipt is the signed, hash-chained evidence artifact for one action.
+type Receipt struct {
+	ID           string
+	IssuedAt     string
+	Fleet        string
+	Actor        map[string]any
+	DelegationID string
+	Action       string
+	Resource     map[string]any
+	Decision     map[string]any
+	Outcome      map[string]any
+	ActionType   string
+	PrevHash     string
+	SignatureAlg string
+	Signature    *Signature
+	Signatures   []Signature
+}
+
+// Body is the signed payload (signatures are deliberately excluded).
+func (r Receipt) Body() map[string]any {
+	return map[string]any{
+		"action":        r.Action,
+		"action_type":   r.ActionType,
+		"actor":         r.Actor,
+		"decision":      r.Decision,
+		"delegation_id": r.DelegationID,
+		"fleet":         r.Fleet,
+		"outcome":       r.Outcome,
+		"prev_hash":     r.PrevHash,
+		"resource":      r.Resource,
+	}
+}
+
+// Hash is the content-address of the receipt body.
+func (r Receipt) Hash() (string, error) {
+	data, err := CanonicalJSON(r.Body())
+	if err != nil {
+		return "", err
+	}
+	return DigestSHA256(data), nil
+}
+
+// PersonalDataRefs returns the opaque subject references touched by the receipt.
+func (r Receipt) PersonalDataRefs() []string {
+	attributes := AsMap(AsMap(r.Resource)["attributes"])
+	refs, _ := attributes["personal_data_refs"].([]any)
+	out := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		out = append(out, fmt.Sprint(ref))
+	}
+	return out
+}
+
+// ValidationResult mirrors the mandate draft's valid/invalid/indeterminate.
+type ValidationResult struct {
+	Outcome              string
+	Reason               string
+	Obligations          []any
+	ConstraintsEvaluated []any
+}
+
+// ReceiptFromMap reconstructs a receipt from stored JSON.
+func ReceiptFromMap(raw map[string]any) Receipt {
+	receipt := Receipt{
+		ID:           stringField(raw, "id"),
+		IssuedAt:     stringField(raw, "issued_at"),
+		Fleet:        stringField(raw, "fleet"),
+		Actor:        AsMap(raw["actor"]),
+		DelegationID: stringField(raw, "delegation_id"),
+		Action:       stringField(raw, "action"),
+		Resource:     AsMap(raw["resource"]),
+		Decision:     AsMap(raw["decision"]),
+		Outcome:      AsMap(raw["outcome"]),
+		ActionType:   stringField(raw, "action_type"),
+		PrevHash:     stringField(raw, "prev_hash"),
+		SignatureAlg: stringField(raw, "signature_alg"),
+	}
+	if signature := AsMap(raw["signature"]); signature != nil {
+		value := signatureFromMap(signature)
+		receipt.Signature = &value
+	}
+	return receipt
+}

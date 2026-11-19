@@ -37,18 +37,27 @@ That gap is this project. [The full NIST-grounded problem statement is in the ar
 ```bash
 git clone https://github.com/rajat397/agentid.git
 cd agentid
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .[dev]
-pytest                    # 56 tests, all passing (fixtures offline)
-agentid demo              # the full flow, end to end
-agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
-agentid profile           # the example Validation Profile + its digest
-agentid anchor --demo     # RFC 3161 timestamp over the ledger head (one-time network call)
-agentid verify-anchor     # verify anchors offline against the demo ledger
-pip install -e .[otel] && python -c "from agentid import otel; print('OTel emitter ready')"
+go test ./...
+go build -o agentid ./cmd/agentid
+./agentid demo
+./agentid erasure cust_4471 --demo
+./agentid profile
+./agentid verify-anchor --file tests/fixtures/demo-anchor.jsonl \
+  --ledger tests/fixtures/demo-anchor.jsonl.ledger.jsonl
+./agentid anchor --ledger <receipts.jsonl> [--tsa URL]   # one-time network call
 ```
 
-Requires Python ≥ 3.10 and one dependency (`cryptography`).
+Requires Go ≥ 1.23; the Go implementation uses the standard library only.
+
+### Parity gate (Python reference retained)
+
+The product is Go. A frozen Python snapshot under `tools/py-reference/` is kept
+until parity is explicitly signed off — it is the conformance oracle, not a
+second supported implementation. `testdata/vectors.json` pins 23 decision
+vectors, canonical/envelope digests, a Python-produced ES256 signature,
+status-list encodings and signed tokens; `go test ./...` replays them all.
+`tools/crosstest` emits Go-signed delegations, receipts and status tokens for
+verification by the Python reference in the opposite direction.
 
 The demo runs a complete lifecycle — an agent issues a delegation with a hard scope, a consequential action is attempted, the observation is denied and logged, the four questions are answered from receipts, the chain is verified — and prints every step. Nothing about it is mocked or animated; `agentid demo` is the same code the tests exercise.
 

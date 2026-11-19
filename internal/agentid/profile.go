@@ -1,0 +1,120 @@
+package agentid
+
+import (
+	"errors"
+)
+
+// Profile is the content-addressed validation contract from the IETF mandate draft.
+type Profile struct {
+	URI              string
+	Iss              string
+	MaxClockSkew     int
+	MaxPopWindow     int
+	MaxTokenLifetime int
+	MaxStatusAge     int
+	MaxChainLength   int
+	Predicates       []string
+	StatusValues     map[string]any
+	SignatureAlgs    []string
+}
+
+func (p Profile) document() map[string]any {
+	return map[string]any{
+		"iss":                p.Iss,
+		"max_chain_length":   p.MaxChainLength,
+		"max_clock_skew":     p.MaxClockSkew,
+		"max_pop_window":     p.MaxPopWindow,
+		"max_status_age":     p.MaxStatusAge,
+		"max_token_lifetime": p.MaxTokenLifetime,
+		"predicates":         p.Predicates,
+		"status_values":      p.StatusValues,
+		"signature_algs":     p.SignatureAlgs,
+	}
+}
+
+// Digest is the base64url SHA-256 of the canonical profile document.
+func (p Profile) Digest() (string, error) {
+	data, err := CanonicalJSON(p.document())
+	if err != nil {
+		return "", err
+	}
+	return B64URLDigestSHA256(data), nil
+}
+
+// ProfileFromMap loads and validates a profile document.
+func ProfileFromMap(raw map[string]any) (Profile, error) {
+	required := []string{"iss", "max_clock_skew", "max_pop_window",
+		"max_token_lifetime", "max_status_age", "max_chain_length", "predicates"}
+	for _, key := range required {
+		if _, ok := raw[key]; !ok {
+			return Profile{}, errors.New("profile missing required key: " + key)
+		}
+	}
+	predicatesRaw, ok := raw["predicates"].([]any)
+	if !ok || len(predicatesRaw) == 0 {
+		return Profile{}, errors.New("profile.predicates must be a non-empty list")
+	}
+	predicates := make([]string, 0, len(predicatesRaw))
+	for _, value := range predicatesRaw {
+		predicates = append(predicates, stringValue(value))
+	}
+	algs := []string{"ES256"}
+	if rawAlgs, ok := raw["signature_algs"].([]any); ok {
+		algs = nil
+		for _, value := range rawAlgs {
+			algs = append(algs, stringValue(value))
+		}
+	}
+	status := map[string]any{}
+	if rawStatus, ok := raw["status_values"].(map[string]any); ok {
+		status = rawStatus
+	}
+	return Profile{
+		URI:              stringField(raw, "uri"),
+		Iss:              stringField(raw, "iss"),
+		MaxClockSkew:     intValue(raw["max_clock_skew"]),
+		MaxPopWindow:     intValue(raw["max_pop_window"]),
+		MaxTokenLifetime: intValue(raw["max_token_lifetime"]),
+		MaxStatusAge:     intValue(raw["max_status_age"]),
+		MaxChainLength:   intValue(raw["max_chain_length"]),
+		Predicates:       predicates,
+		StatusValues:     status,
+		SignatureAlgs:    algs,
+	}, nil
+}
+
+// ExampleProfile mirrors spec/validation-profile.example.json.
+func ExampleProfile() Profile {
+	return Profile{
+		URI:              "https://example.invalid/profiles/agentic-v1.json",
+		Iss:              "example-rp",
+		MaxClockSkew:     30,
+		MaxPopWindow:     300,
+		MaxTokenLifetime: 900,
+		MaxStatusAge:     60,
+		MaxChainLength:   3,
+		Predicates:       []string{"eq", "in", "max", "min", "window", "sum_max", "cosign_above"},
+		StatusValues:     map[string]any{"0x02": "suspended"},
+		SignatureAlgs:    []string{"ES256"},
+	}
+}
+
+// AllowsPredicate reports whether the profile admits a predicate type.
+func (p Profile) AllowsPredicate(kind string) bool {
+	for _, candidate := range p.Predicates {
+		if candidate == kind {
+			return true
+		}
+	}
+	return false
+}
+
+// AllowsAlgorithm reports whether the profile admits a signature algorithm.
+func (p Profile) AllowsAlgorithm(alg string) bool {
+	for _, candidate := range p.SignatureAlgs {
+		if candidate == alg {
+			return true
+		}
+	}
+	return false
+}

@@ -16,7 +16,7 @@ The chain head commits to every earlier receipt (`Ledger.verify_chain`), so stam
 | Piece | File |
 |---|---|
 | Anchor library | `src/agentid/anchor.py` — DER TimeStampReq by hand (no new dependencies), response parsing, binding check |
-| CLI | `agentid anchor --demo [--tsa URL] [--out anchors.jsonl]` |
+| CLI | `agentid anchor --ledger <receipts.jsonl> [--tsa URL] [--out anchors.jsonl]` |
 | Offline verify | `agentid verify-anchor --file anchors.jsonl --ledger anchors.jsonl.ledger.jsonl` |
 | Fixture | `tests/fixtures/demo-anchor.jsonl*` — a real FreeTSA response captured 2026-11-17 (serial 169877646), so tests never touch the network |
 
