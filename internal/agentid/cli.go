@@ -47,17 +47,25 @@ func cmdProfile(stdout io.Writer) int {
 	return 0
 }
 
-func cmdDemo(stdout, stderr io.Writer) int {
-	fmt.Fprintln(stderr, "DevSigner uses a local private key — NOT FOR PRODUCTION; use ExternalSigner with a KMS/HSM adapter.")
+type demoBundle struct {
+	ledger        *Ledger
+	delegation    Delegation
+	approval      map[string]any
+	signer        Signer
+	denial        *Receipt
+	allowed       *Receipt
+	denialResult  ValidationResult
+	allowedResult ValidationResult
+}
+
+func buildDemoLedger() (*demoBundle, error) {
 	privatePEM, publicPEM, err := GenerateKeyPair()
 	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+		return nil, err
 	}
 	signer, err := NewDevSigner(privatePEM, publicPEM, "demo_signer")
 	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+		return nil, err
 	}
 	subject := map[string]any{"type": "human", "id": "oidc|acme-retail|usr_8842"}
 	constraints := map[string]any{
@@ -69,8 +77,7 @@ func cmdDemo(stdout, stderr io.Writer) int {
 	delegation, err := CreateDelegation(nil, subject, "marketing-agent", constraints,
 		dateTimeNow().Add(30*time.Minute).Format(timeLayout), DelegationOptions{Signer: signer})
 	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+		return nil, err
 	}
 	ledger := &Ledger{}
 	denial, denialResult, err := Act(ledger, []Delegation{delegation}, map[string]any{
@@ -80,8 +87,7 @@ func cmdDemo(stdout, stderr io.Writer) int {
 		"personal_data_refs": []any{"cust_4471"},
 	}, ExampleProfile(), publicPEM, ActOptions{Signer: signer})
 	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return 1
+		return nil, err
 	}
 	approval := map[string]any{
 		"id": "apr_01DEMO", "delegation_id": delegation.ID,
@@ -95,19 +101,34 @@ func cmdDemo(stdout, stderr io.Writer) int {
 		"personal_data_refs": []any{"cust_4471"},
 	}, ExampleProfile(), publicPEM, ActOptions{Signer: signer, Approval: approval})
 	if err != nil {
+		return nil, err
+	}
+	return &demoBundle{ledger: ledger, delegation: delegation, approval: approval,
+		signer: signer, denial: denial, allowed: allowed,
+		denialResult: denialResult, allowedResult: allowedResult}, nil
+}
+
+func cmdDemo(stdout, stderr io.Writer) int {
+	fmt.Fprintln(stderr, "DevSigner uses a local private key — NOT FOR PRODUCTION; use ExternalSigner with a KMS/HSM adapter.")
+	bundle, err := buildDemoLedger()
+	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
 	fmt.Fprintln(stdout, "agentid — the full lifecycle, running against real Go code")
-	fmt.Fprintf(stdout, "\n1. Human grants authority: %s (kid %s)\n", delegation.ID, delegation.Signature.Kid)
+	fmt.Fprintf(stdout, "\n1. Human grants authority: %s (kid %s)\n",
+		bundle.delegation.ID, bundle.delegation.Signature.Kid)
 	fmt.Fprintf(stdout, "2. Over-cap action: %s — %s (receipt %s)\n",
-		denialResult.Outcome, denialResult.Reason, denial.ID)
-	fmt.Fprintf(stdout, "3. Within authority: %s (receipt %s)\n", allowedResult.Outcome, allowed.ID)
+		bundle.denialResult.Outcome, bundle.denialResult.Reason, bundle.denial.ID)
+	fmt.Fprintf(stdout, "3. Within authority: %s (receipt %s)\n",
+		bundle.allowedResult.Outcome, bundle.allowed.ID)
 	fmt.Fprintf(stdout, "4. Four questions: agent=%s, subject=%s, credential=%s, approval=%s\n",
-		stringField(allowed.Actor, "spiffe_id"), stringField(delegation.Subject, "id"),
-		stringField(allowed.Actor, "credential_kid"), stringField(approval, "id"))
-	ledger.Receipts[0].Action = "social.post.publish"
-	problems := ledger.VerifyChain(signer.PublicKeys())
+		stringField(bundle.allowed.Actor, "spiffe_id"),
+		stringField(bundle.delegation.Subject, "id"),
+		stringField(bundle.allowed.Actor, "credential_kid"),
+		stringField(bundle.approval, "id"))
+	bundle.ledger.Receipts[0].Action = "social.post.publish"
+	problems := bundle.ledger.VerifyChain(bundle.signer.PublicKeys())
 	fmt.Fprintf(stdout, "5. Tampered receipt: signatures + hash chain verify: %t (%s)\n",
 		len(problems) == 0, firstProblem(problems))
 	return 0
@@ -187,51 +208,128 @@ func cmdErasure(args []string, stdout io.Writer) int {
 
 func cmdAnchor(args []string, stdout, stderr io.Writer) int {
 	tsaURL := DefaultTSA
+	outPath := "anchors.jsonl"
 	ledgerPath := ""
+	demo := false
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--tsa" && i+1 < len(args) {
-			i++
-			tsaURL = args[i]
-		}
-		if args[i] == "--ledger" && i+1 < len(args) {
-			i++
-			ledgerPath = args[i]
+		switch args[i] {
+		case "--demo":
+			demo = true
+		case "--tsa":
+			if i+1 < len(args) {
+				i++
+				tsaURL = args[i]
+			}
+		case "--out":
+			if i+1 < len(args) {
+				i++
+				outPath = args[i]
+			}
+		case "--ledger":
+			if i+1 < len(args) {
+				i++
+				ledgerPath = args[i]
+			}
 		}
 	}
-	ledger := &Ledger{}
-	if ledgerPath != "" {
-		data, err := os.ReadFile(ledgerPath)
+	var ledger *Ledger
+	if demo {
+		bundle, err := buildDemoLedger()
 		if err != nil {
 			fmt.Fprintln(stderr, err)
 			return 1
 		}
-		for _, line := range strings.Split(string(data), "\n") {
-			if strings.TrimSpace(line) == "" {
-				continue
-			}
-			value, err := DecodeJSON([]byte(line))
-			if err != nil {
-				fmt.Fprintln(stderr, err)
-				return 1
-			}
-			receipt := ReceiptFromMap(AsMap(value))
-			if err := ledger.Append(&receipt); err != nil {
-				fmt.Fprintln(stderr, err)
-				return 1
-			}
+		ledger = bundle.ledger
+	} else if ledgerPath != "" {
+		loaded, err := loadLedgerFile(ledgerPath)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
 		}
+		ledger = loaded
 	} else {
-		fmt.Fprintln(stderr, "anchor requires --ledger <receipts.jsonl>")
+		fmt.Fprintln(stderr, "anchor requires --demo or --ledger <receipts.jsonl>")
 		return 2
 	}
+	head, err := ChainHead(ledger)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stderr, "anchoring chain head %s… via %s\n", shortHash(head), tsaURL)
 	record, err := AnchorLedger(ledger, tsaURL, 15*time.Second)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	data, _ := json.Marshal(record)
+	if outPath != "" {
+		receiptsPath := outPath + ".ledger.jsonl"
+		if err := writeReceipts(receiptsPath, ledger); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		if err := appendAnchor(outPath, record); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		fmt.Fprintf(stdout, "ledger receipts written to %s\nanchor record appended to %s\n",
+			receiptsPath, outPath)
+	}
+	data, _ := json.MarshalIndent(record, "", "  ")
 	fmt.Fprintln(stdout, string(data))
 	return 0
+}
+
+func loadLedgerFile(path string) (*Ledger, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	ledger := &Ledger{}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		value, err := DecodeJSON([]byte(line))
+		if err != nil {
+			return nil, err
+		}
+		receipt := ReceiptFromMap(AsMap(value))
+		if err := ledger.Append(&receipt); err != nil {
+			return nil, err
+		}
+	}
+	return ledger, nil
+}
+
+func writeReceipts(path string, ledger *Ledger) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	encoder := json.NewEncoder(file)
+	encoder.SetEscapeHTML(false)
+	for _, receipt := range ledger.Receipts {
+		if err := encoder.Encode(receipt.ToMap()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func appendAnchor(path string, record map[string]any) error {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	data, err := CanonicalJSON(record)
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(append(data, '\n'))
+	return err
 }
 
 func cmdVerifyAnchor(args []string, stdout io.Writer) int {
@@ -255,26 +353,10 @@ func cmdVerifyAnchor(args []string, stdout io.Writer) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	ledgerData, err := os.ReadFile(ledgerPath)
+	ledger, err := loadLedgerFile(ledgerPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
-	}
-	ledger := &Ledger{}
-	for _, line := range strings.Split(string(ledgerData), "\n") {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		value, err := DecodeJSON([]byte(line))
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return 1
-		}
-		receipt := ReceiptFromMap(AsMap(value))
-		if err := ledger.Append(&receipt); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return 1
-		}
 	}
 	ok := 0
 	for _, anchor := range anchors {
@@ -286,6 +368,7 @@ func cmdVerifyAnchor(args []string, stdout io.Writer) int {
 			fmt.Fprintf(stdout, "anchor[%d] FAILED: %s\n", ok+1, firstProblem(problems))
 		}
 	}
+	fmt.Fprintf(stdout, "%d/%d anchors verify\n", ok, len(anchors))
 	if ok != len(anchors) {
 		return 1
 	}

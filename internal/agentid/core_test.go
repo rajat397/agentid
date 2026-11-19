@@ -1,6 +1,7 @@
 package agentid
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -193,5 +194,50 @@ func TestStatusLookupGuard(t *testing.T) {
 	}
 	if result.Outcome != "invalid" || !strings.Contains(result.Reason, "lookup") {
 		t.Fatalf("missing lookup was not fail-closed: %s", result.Reason)
+	}
+}
+
+func TestNilSlicesCanonicalizeAsNullAndSurviveRoundTrip(t *testing.T) {
+	data, err := CanonicalJSON(map[string]any{"obligations": []any(nil)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != `{"obligations":null}` {
+		t.Fatalf("nil slice canonicalized as %s", data)
+	}
+	signer, pub := newSigner(t, "roundtrip_key")
+	subject := map[string]any{"type": "human", "id": "usr"}
+	delegation, err := CreateDelegation(nil, subject, "agent", testConstraints(),
+		"2030-01-01T00:00:00Z", DelegationOptions{Signer: signer})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ledger := &Ledger{}
+	receipt, _, err := Act(ledger, []Delegation{delegation}, map[string]any{
+		"action": "support.ticket.resolve", "system": "zendesk",
+		"region": "apac", "count": "1",
+	}, ExampleProfile(), pub, ActOptions{Signer: signer})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before, err := receipt.Hash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored, err := json.Marshal(receipt.ToMap())
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := DecodeJSON(stored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reloaded := ReceiptFromMap(AsMap(value))
+	after, err := reloaded.Hash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before != after {
+		t.Fatalf("receipt hash changed across JSON round trip: %s -> %s", before, after)
 	}
 }

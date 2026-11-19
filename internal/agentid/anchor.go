@@ -153,7 +153,7 @@ func ChainHead(ledger *Ledger) (string, error) {
 	if len(ledger.Receipts) == 0 {
 		return "", errors.New("cannot anchor an empty ledger")
 	}
-	if problems := ledger.VerifyChain(nil); len(problems) > 0 {
+	if problems := ledger.VerifyHashes(); len(problems) > 0 {
 		return "", errors.New("ledger does not verify: " + problems[0])
 	}
 	hash, err := ledger.Receipts[len(ledger.Receipts)-1].Hash()

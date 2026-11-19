@@ -147,3 +147,29 @@ func ReceiptFromMap(raw map[string]any) Receipt {
 	}
 	return receipt
 }
+
+// ToMap returns the stored JSON form of a receipt (lowercase field names).
+func (r Receipt) ToMap() map[string]any {
+	out := map[string]any{
+		"id": r.ID, "issued_at": r.IssuedAt, "fleet": r.Fleet,
+		"actor": r.Actor, "delegation_id": r.DelegationID, "action": r.Action,
+		"resource": r.Resource, "decision": r.Decision, "outcome": r.Outcome,
+		"action_type": r.ActionType, "prev_hash": r.PrevHash,
+		"signature_alg": r.SignatureAlg,
+	}
+	if r.Signature != nil {
+		out["signature"] = map[string]any{
+			"alg": r.Signature.Alg, "kid": r.Signature.Kid, "value": r.Signature.Value,
+		}
+	}
+	if r.Signatures != nil {
+		items := []any{}
+		for _, signature := range r.Signatures {
+			items = append(items, map[string]any{
+				"alg": signature.Alg, "kid": signature.Kid, "value": signature.Value,
+			})
+		}
+		out["signatures"] = items
+	}
+	return out
+}

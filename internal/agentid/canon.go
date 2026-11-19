@@ -59,6 +59,10 @@ func writeCanonical(buf *bytes.Buffer, value any) error {
 		case reflect.Bool:
 			writeCanonicalBool(buf, rv.Bool())
 		case reflect.Slice, reflect.Array:
+			if rv.Kind() == reflect.Slice && rv.IsNil() {
+				buf.WriteString("null")
+				return nil
+			}
 			buf.WriteByte('[')
 			for i := 0; i < rv.Len(); i++ {
 				if i > 0 {
@@ -70,6 +74,10 @@ func writeCanonical(buf *bytes.Buffer, value any) error {
 			}
 			buf.WriteByte(']')
 		case reflect.Map:
+			if rv.IsNil() {
+				buf.WriteString("null")
+				return nil
+			}
 			keys := make([]string, 0, rv.Len())
 			iter := rv.MapRange()
 			for iter.Next() {

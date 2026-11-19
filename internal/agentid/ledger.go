@@ -34,6 +34,30 @@ func (l *Ledger) Append(receipt *Receipt) error {
 
 const stringsRepeatedZero = "0000000000000000000000000000000000000000000000000000000000000000"
 
+// VerifyHashes checks hash-chain links without requiring signature keys.
+func (l *Ledger) VerifyHashes() []string {
+	problems := []string{}
+	expected := stringsRepeatedZero
+	for i, receipt := range l.Receipts {
+		if receipt.PrevHash != expected {
+			problems = append(problems, fmt.Sprintf(
+				"receipt[%d] prev_hash broken: expected %s… got %s…",
+				i, expected[:12], receipt.PrevHash[:min(12, len(receipt.PrevHash))]))
+			break
+		}
+		hash, err := receipt.Hash()
+		if err != nil {
+			problems = append(problems, fmt.Sprintf("receipt[%d] hash failed: %v", i, err))
+			break
+		}
+		expected = hash
+	}
+	if len(l.Receipts) == 0 {
+		problems = append(problems, "ledger is empty")
+	}
+	return problems
+}
+
 // VerifyChain checks hash links and, when keys are supplied, ES256 signatures.
 func (l *Ledger) VerifyChain(publicKeys map[string]string) []string {
 	problems := []string{}
