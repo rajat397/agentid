@@ -216,6 +216,21 @@ func VerifyEvidenceBundle(bundle EvidenceBundle) []string {
 // including historical anchors whose head is no longer the chain tip.
 func VerifyAnchorBinding(record map[string]any) []string {
 	problems := []string{}
+	if stringField(record, "flavor") == "bucket" {
+		keys := map[string]string{}
+		if material := stringField(record, "signer_public"); material != "" {
+			keys[stringField(record, "signer_kid")] = material
+		}
+		stamp := BucketStamp{
+			HeadSeq:   intValue(record["head_seq"]),
+			HeadHash:  stringField(record, "head_hash"),
+			GenTime:   stringField(record, "gen_time"),
+			SignerKid: stringField(record, "signer_kid"),
+			Alg:       stringField(record, "alg"),
+			Signature: stringField(record, "signature"),
+		}
+		return VerifyBucketStamp(stamp, keys, stamp.HeadHash)
+	}
 	response, err := base64.StdEncoding.DecodeString(stringField(record, "response_der_b64"))
 	if err != nil {
 		return append(problems, "anchor unparsable: "+err.Error())

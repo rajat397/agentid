@@ -16,19 +16,23 @@ import (
 // World is an isolated, in-process deployment used by real-world scenarios.
 // Every dependency is a local fixture: no network, no cloud, no shared state.
 type World struct {
-	t           *testing.T
-	signer      *agentid.DevSigner
-	rootPub     []byte
-	delegation  agentid.Delegation
-	profile     agentid.Profile
-	statusToken string
-	statusKeys  map[string]string
-	statuses    []int
-	wrapper     *agentid.MCPWrapper
-	adsCalls    *int64
-	scimActive  *atomic.Bool
-	tsaURL      string
-	anchorMgr   interface {
+	t            *testing.T
+	signer       *agentid.DevSigner
+	rootPub      []byte
+	delegation   agentid.Delegation
+	profile      agentid.Profile
+	statusToken  string
+	statusKeys   map[string]string
+	statuses     []int
+	wrapper      *agentid.MCPWrapper
+	adsCalls     *int64
+	scimActive   *atomic.Bool
+	tsaURL       string
+	tsaCalls     *int64
+	bucketDir    string
+	bucketSigner agentid.Signer
+	bucketStamps []map[string]any
+	anchorMgr    interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
 	scimClient  agentid.SCIMClient
@@ -72,8 +76,10 @@ func NewWorld(t *testing.T) *World {
 	t.Cleanup(scim.Close)
 	scimClient := agentid.SCIMClient{BaseURL: scim.URL}
 	worldLedger := &agentid.Ledger{}
+	var tsaCalls int64
 	tsaFail := atomic.Bool{}
 	tsa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&tsaCalls, 1)
 		if tsaFail.Load() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -165,7 +171,8 @@ func NewWorld(t *testing.T) *World {
 		statuses: statuses, wrapper: wrapper, adsCalls: &adsCalls,
 		registry: registry, publisher: publisher,
 		scimActive: &active, scimClient: scimClient,
-		anchorMgr: manager, tsaURL: tsa.URL, mockTSAFail: &tsaFail,
+		anchorMgr: manager, tsaURL: tsa.URL, tsaCalls: &tsaCalls,
+		mockTSAFail: &tsaFail, bucketDir: t.TempDir(), bucketSigner: signer,
 		ledger: worldLedger, ledgerPath: t.TempDir() + "/ledger.jsonl",
 	}
 }
@@ -275,4 +282,38 @@ func (w *World) VerifyAuditBundle() {
 	if problems := agentid.VerifyEvidenceBundle(bundle); len(problems) > 0 {
 		w.t.Fatalf("auditor bundle failed: %v", problems)
 	}
+}
+
+func (w *World) ObserveBucketAnchors() {
+	w.t.Helper()
+	head, err := agentid.ChainHead(w.ledger)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	stamp, err := agentid.NewBucketStamp(head, len(w.ledger.Receipts)-1, w.bucketSigner)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	if _, err := agentid.WriteBucketStamp(w.bucketDir, stamp); err != nil {
+		w.t.Fatal(err)
+	}
+	data, err := agentid.CanonicalJSON(stamp)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	value, err := agentid.DecodeJSON(data)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	w.bucketStamps = append(w.bucketStamps, agentid.AsMap(value))
+}
+
+func (w *World) VerifyBucketStamp(raw map[string]any) []string {
+	w.t.Helper()
+	head, err := agentid.ChainHead(w.ledger)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	return agentid.VerifyBucketStamp(
+		agentid.BucketStampFromMap(raw), w.bucketSigner.PublicKeys(), head)
 }

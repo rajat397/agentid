@@ -26,10 +26,13 @@ type AnchorCadence struct {
 // AnchorConfig is the customer's anchoring policy. StrictCA defaults to true;
 // production deployments supply their TSA CA bundle rather than disabling it.
 type AnchorConfig struct {
-	TSAURL   string
-	CAPEM    []byte
-	StrictCA bool
-	Cadence  AnchorCadence
+	Flavor       string
+	BucketDir    string
+	BucketSigner Signer
+	TSAURL       string
+	CAPEM        []byte
+	StrictCA     bool
+	Cadence      AnchorCadence
 }
 
 // AnchorManager anchors chain heads at a cadence, queues failures and retries
@@ -51,6 +54,18 @@ func NewAnchorManager(config AnchorConfig) (*AnchorManager, error) {
 	}
 	if config.Cadence.MaxInterval <= 0 {
 		config.Cadence.MaxInterval = 24 * time.Hour
+	}
+	if config.Flavor == "" {
+		config.Flavor = "rfc3161"
+	}
+	if config.Flavor == "transparency-log" {
+		return nil, errors.New("transparency-log anchor flavor is not implemented in V1")
+	}
+	if config.Flavor != "rfc3161" && config.Flavor != "bucket" {
+		return nil, errors.New("unknown anchor flavor: " + config.Flavor)
+	}
+	if config.Flavor == "bucket" && config.BucketSigner == nil {
+		return nil, errors.New("bucket flavor requires a customer signer")
 	}
 	if config.TSAURL == "" {
 		config.TSAURL = DefaultTSA
@@ -114,6 +129,9 @@ func (m *AnchorManager) Observe(ledger *Ledger, tsaURL string) ([]map[string]any
 }
 
 func (m *AnchorManager) anchor(head string, seq int, tsaURL string) error {
+	if m.config.Flavor == "bucket" {
+		return m.anchorToBucket(head, seq)
+	}
 	endpoint := tsaURL
 	if endpoint == "" {
 		endpoint = m.config.TSAURL
@@ -221,4 +239,28 @@ func DetectAnchorGaps(anchors []map[string]any, ledger *Ledger) []string {
 
 func b64StdEncode(data []byte) string {
 	return base64.StdEncoding.EncodeToString(data)
+}
+
+func (m *AnchorManager) anchorToBucket(head string, seq int) error {
+	stamp, err := NewBucketStamp(head, seq, m.config.BucketSigner)
+	if err != nil {
+		return err
+	}
+	path, err := WriteBucketStamp(m.config.BucketDir, stamp)
+	if err != nil {
+		return err
+	}
+	material := ""
+	if keys := m.config.BucketSigner.PublicKeys(); len(keys) > 0 {
+		material = keys[stamp.SignerKid]
+	}
+	m.anchors = append(m.anchors, map[string]any{
+		"flavor": "bucket", "head_hash": head, "head_seq": seq,
+		"gen_time": stamp.GenTime, "signer_kid": stamp.SignerKid,
+		"alg": stamp.Alg, "signature": stamp.Signature,
+		"signer_public": material, "stamp_path": path,
+	})
+	m.lastSeq = seq
+	m.lastAt = time.Now()
+	return nil
 }

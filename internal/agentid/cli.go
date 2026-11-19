@@ -659,6 +659,7 @@ func cmdMockAds(args []string, stdout, stderr io.Writer) int {
 
 func cmdAnchorWatch(args []string, stdout, stderr io.Writer) int {
 	ledgerPath, tsaURL, outPath := "", "", "anchors.jsonl"
+	flavor, bucketDir, signerKeyPath := "rfc3161", "", ""
 	every := 1
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -682,6 +683,21 @@ func cmdAnchorWatch(args []string, stdout, stderr io.Writer) int {
 				i++
 				outPath = args[i]
 			}
+		case "--flavor":
+			if i+1 < len(args) {
+				i++
+				flavor = args[i]
+			}
+		case "--bucket-dir":
+			if i+1 < len(args) {
+				i++
+				bucketDir = args[i]
+			}
+		case "--signer-key":
+			if i+1 < len(args) {
+				i++
+				signerKeyPath = args[i]
+			}
 		}
 	}
 	if ledgerPath == "" {
@@ -696,10 +712,34 @@ func cmdAnchorWatch(args []string, stdout, stderr io.Writer) int {
 	if every <= 0 {
 		every = 1
 	}
-	manager, err := NewAnchorManager(AnchorConfig{
+	config := AnchorConfig{
+		Flavor: flavor, BucketDir: bucketDir,
 		TSAURL: tsaURL, StrictCA: true,
 		Cadence: AnchorCadence{MaxReceipts: every},
-	})
+	}
+	if flavor == "bucket" {
+		keyData, err := os.ReadFile(signerKeyPath)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		key, err := ParsePrivatePEM(keyData)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		publicPEM, err := PublicPEMFromPrivate(key)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		config.BucketSigner, err = NewDevSigner(keyData, publicPEM, "bucket_signer")
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+	}
+	manager, err := NewAnchorManager(config)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1

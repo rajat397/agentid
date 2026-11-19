@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Anchor flavors** — RFC 3161 TSA or customer-key bucket head-stamps, with
+  per-flavor trust assumptions documented. See
+  [reference/anchor-trust.md](docs/reference/anchor-trust.md).
 - **Anchor manager** — cadence-based RFC 3161 anchoring with queued retries,
   strict CA transport and auditor gap detection. See
   [reference/anchor-manager.md](docs/reference/anchor-manager.md).
