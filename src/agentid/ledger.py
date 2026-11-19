@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from .crypto import canonical_json, digest_sha256
+from .crypto import canonical_json, digest_sha256, verify
 from .receipt import Receipt
 
 
@@ -26,13 +26,20 @@ class Ledger:
         self.receipts.append(receipt)
         return receipt
 
-    def verify_chain(self) -> tuple[bool, list[str]]:
+    def verify_chain(self, public_keys: dict[str, str] | None = None) -> tuple[bool, list[str]]:
         problems: list[str] = []
         expected = "0" * 64
         for i, r in enumerate(self.receipts):
             if r.prev_hash != expected:
                 problems.append(f"receipt[{i}] prev_hash broken: expected {expected[:12]}… got {r.prev_hash[:12]}…")
                 break
+            if r.signature is not None:
+                if public_keys is None:
+                    problems.append(f"receipt[{i}] signature not verified: no public keys supplied")
+                else:
+                    pem = public_keys.get(r.signature.get("kid", ""))
+                    if not pem or not verify(pem, r.body, r.signature.get("value", "")):
+                        problems.append(f"receipt[{i}] signature invalid or kid unknown")
             expected = r.hash
         if not self.receipts:
             problems.append("ledger is empty")

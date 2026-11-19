@@ -15,6 +15,7 @@ from typing import Any
 from .constraints import attenuation_violation
 from .crypto import (canonical_json, digest_sha256, key_fingerprint,
                      public_from_private, sign, verify)
+from .signing import Signer
 
 
 def now_iso() -> str:
@@ -72,6 +73,7 @@ def create_delegation(
     validity_seconds: int = 900,
     actor_public_pem: str | None = None,
     issuer_id: str | None = None,
+    signer: Signer | None = None,
 ) -> Delegation:
     now = datetime.now(timezone.utc)
     issued = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -86,7 +88,12 @@ def create_delegation(
         if violation:
             raise ValueError(violation)
 
-    signer_public = public_from_private(private_pem)
+    if signer is not None and private_pem:
+        raise ValueError("provide either private_pem or signer, not both")
+    if signer is None and not private_pem:
+        raise ValueError("a private_pem or a signer is required")
+    signer_public = (signer.public_key(signer.kid) if signer is not None
+                     else public_from_private(private_pem))
     issuer = {
         "id": issuer_id or (parent.actor["id"] if parent else (subject or {}).get("id", "")),
         "kid": key_fingerprint(signer_public),
@@ -114,8 +121,12 @@ def create_delegation(
         "subject": subject,
         "issuer": issuer,
     }
-    signature = {"alg": "ES256", "kid": issuer["kid"],
-                 "value": sign(private_pem, body)}
+    if signer is not None:
+        sig = signer.sign(body)
+        signature = {"alg": "ES256", "kid": sig["kid"], "value": sig["value"]}
+    else:
+        signature = {"alg": "ES256", "kid": issuer["kid"],
+                     "value": sign(private_pem, body)}
     return Delegation(signature=signature, **body)
 
 

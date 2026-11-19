@@ -84,6 +84,7 @@ def validate(
     approval: dict[str, Any] | None = None,
     at: str | None = None,
     revoked: set[str] | None = None,
+    public_keys: dict[str, str] | None = None,
 ) -> ValidationResult:
     now = _parse(at) if at else datetime.now(timezone.utc)
 
@@ -102,7 +103,8 @@ def validate(
     # legacy grants fall back to the caller-supplied root key.
     for i, d in enumerate(chain):
         if i == 0:
-            key = public_pem
+            kid = d.signature.get("kid", "")
+            key = public_keys.get(kid, public_pem) if public_keys else public_pem
         else:
             parent = chain[i - 1]
             pinned = parent.actor.get("verification_key")

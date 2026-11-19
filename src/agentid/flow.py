@@ -14,6 +14,7 @@ from .envelope import build as build_envelope, digest as envelope_digest
 from .delegation import create_delegation
 from .ledger import Ledger
 from .profile import ValidationProfile
+from .signing import Signer
 from .receipt import Receipt
 from .validator import ValidationResult, validate
 
@@ -40,9 +41,11 @@ def act(
     approval: dict[str, Any] | None = None,
     at: str | None = None,
     revoked: set[str] | None = None,
+    signer: Signer | None = None,
 ) -> tuple[Receipt, ValidationResult]:
     result = validate(chain, action_request, profile, public_pem,
-                      ledger=ledger, approval=approval, at=at, revoked=revoked)
+                      ledger=ledger, approval=approval, at=at, revoked=revoked,
+                      public_keys=signer.public_keys() if signer is not None else None)
     prev_hash = ledger.receipts[-1].hash if ledger.receipts else "0" * 64
     envelope_attributes = build_envelope(action_request)["attributes"]
     decision = {
@@ -81,5 +84,7 @@ def act(
         action_type="observed",
         prev_hash=prev_hash,
     )
+    if signer is not None:
+        receipt.signature = signer.sign(receipt.body)
     ledger.append(receipt)
     return receipt, result

@@ -39,7 +39,7 @@ git clone https://github.com/rajat397/agentid.git
 cd agentid
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
-pytest                    # 40 tests, all passing (fixtures offline)
+pytest                    # 46 tests, all passing (fixtures offline)
 agentid demo              # the full flow, end to end
 agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
 agentid profile           # the example Validation Profile + its digest
@@ -95,11 +95,17 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/constraints.md](docs/reference/constraints.md).
 - **Deterministic validator** — returns `valid / invalid / indeterminate`
   with obligations listed, per the emerging agent-delegation model.
-- **Hash-chained receipts** — tamper-evident ledger; a tampered receipt
-  breaks verification.
+- **Signed, hash-chained receipts** — every receipt produced through the
+  credential-service signer carries an ES256 signature (`kid`, value) over
+  its body, plus the hash chain; tampering with either breaks verification.
+  Demos use a labeled dev signer; production uses a KMS/HSM adapter.
 - **Three mutants, executable** — leaked credential revoked and denied with
   a receipt; incident reconstructable from receipts alone; a right-to-erasure
   plan for personal data touched by agents.
+- **Credential-service signer boundary** — `DevSigner` (labeled not-for-
+  production), `ExternalSigner` (KMS/HSM via a sign callable, no private key
+  in process), `RotatingSigner` (overlap window). See
+  [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
 - **RFC 3161 long-horizon evidence** — the ledger head (which commits to

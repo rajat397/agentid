@@ -21,7 +21,9 @@ from .flow import act, new_keys
 from .erasure import build_erasure_plan
 from .ledger import Ledger
 from .profile import ValidationProfile
+from .signing import DevSigner
 from .validator import validate
+from .signing import DevSigner
 
 PROFILE = ValidationProfile.example()
 
@@ -137,9 +139,9 @@ def cmd_verify_anchor(file: str, ledger_path: str) -> int:
 def cmd_demo() -> int:
     _banner("agentid — the full lifecycle, running against real code")
 
-    from .profile import ValidationProfile
     profile = ValidationProfile.example()
     priv, pub = new_keys()
+    signer = DevSigner(priv, pub, kid="demo_signer")
     ledger = Ledger()
 
     _banner("1. A human grants authority — signed, scoped, expiring")
@@ -149,7 +151,7 @@ def cmd_demo() -> int:
    The agent never holds the downstream credential. The enforcement point does."""
     )
     delegation = create_delegation(
-        priv,
+        "",
         subject={"type": "human", "id": "oidc|acme-retail|usr_8842"},
         actor_id="marketing-agent",
         constraints={
@@ -158,6 +160,7 @@ def cmd_demo() -> int:
             "requires_human_approval_above": {"value": "500.00", "currency": "USD"},
         },
         expires_at=_iso(30),
+        signer=signer,
     )
     print(f"   delegation_id = {delegation.id}")
     print(f"   signature     = valid (ES256, kid {delegation.signature['kid']})")
@@ -169,7 +172,7 @@ def cmd_demo() -> int:
          "currency": "USD", "resource_type": "ad_credit_account",
          "resource_id": "acme_retail_meta", "external_ref": "meta_ad_order_993812",
          "personal_data_refs": ["cust_4471"]},
-        PROFILE, pub,
+        PROFILE, pub, signer=signer,
     )
     print(f"   outcome   = {result.outcome}")
     print(f"   reason    = {result.reason}")
@@ -194,7 +197,7 @@ def cmd_demo() -> int:
          "currency": "USD", "resource_type": "ad_credit_account",
          "resource_id": "acme_retail_meta", "external_ref": "meta_ad_order_993813",
          "personal_data_refs": ["cust_4471"]},
-        PROFILE, pub, approval=approval,
+        PROFILE, pub, approval=approval, signer=signer,
     )
     print(f"   outcome   = {result2.outcome}   {approval_marker}")
     print(f"   receipt   = {allowed.id}")
@@ -207,8 +210,8 @@ def cmd_demo() -> int:
 
     _banner("5. Tamper with history — the chain catches it")
     ledger.receipts[0].action = "social.post.publish"
-    ok, problems = ledger.verify_chain()
-    print(f"   hash chain verifies: {'NO' if problems else 'YES'}")
+    ok, problems = ledger.verify_chain(public_keys=signer.public_keys())
+    print(f"   signatures + hash chain verify: {'NO' if problems else 'YES'}")
     if problems:
         print(f"   broken at: {problems[0]}")
     return 0

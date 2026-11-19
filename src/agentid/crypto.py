@@ -21,12 +21,12 @@ def b64url(data: bytes) -> str:
 def canonical_json(obj: Any) -> bytes:
     """Deterministic JSON: sorted keys, compact separators, ASCII, no floats.
 
-    Amounts are decimal strings by policy; this encoder would reject floats,
-    which is why float amounts are impossible in signed artifacts.
+    Numbers in signed artifacts are decimal strings by policy; the encoder
+    rejects floats so no signed value can depend on binary floating point.
     """
 
     def _default(o: Any) -> Any:
-        raise TypeError(f"unserializable type: {type(o)!r} — amounts must be decimal strings")
+        raise TypeError(f"unserializable type: {type(o)!r} — use decimal strings for numbers in signed artifacts")
 
     return json.dumps(
         obj,
