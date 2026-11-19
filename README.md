@@ -47,7 +47,7 @@ go build -o agentid ./cmd/agentid
 ./agentid anchor --ledger <receipts.jsonl> [--tsa URL]   # one-time network call
 ```
 
-Requires Go ≥ 1.23; the Go implementation uses the standard library only.
+Requires Go ≥ 1.27 (for `crypto/mldsa` in the standard library); no external Go modules.
 
 ### Parity gate (Python reference retained)
 
