@@ -104,6 +104,9 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 		"agent_id":       stringField(leaf.Actor, "id"),
 		"credential_kid": leaf.Signature.Kid,
 	}
+	if version := AsMap(leaf.Actor["version"]); version != nil {
+		actor["version"] = version
+	}
 	if leaf.Attestation != nil {
 		attestationJSON, err := CanonicalJSON(leaf.Attestation)
 		if err != nil {

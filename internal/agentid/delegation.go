@@ -15,6 +15,7 @@ type DelegationOptions struct {
 	Attestor       attest.Attestor
 	PQSigner       Signer
 	NoPQ           bool
+	Version        *AgentVersion
 	StatusIdx      *int
 	StatusURI      string
 }
@@ -97,6 +98,9 @@ func CreateDelegation(privatePEM []byte, subject map[string]any, actorID string,
 	actor := map[string]any{"type": "agent", "id": actorID, "spiffe_id": spiffe}
 	if len(opts.ActorPublicPEM) > 0 {
 		actor["verification_key"] = string(opts.ActorPublicPEM)
+	}
+	if opts.Version != nil {
+		actor["version"] = opts.Version.toMap()
 	}
 
 	body := map[string]any{

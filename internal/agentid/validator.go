@@ -50,6 +50,7 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 
 	// 1. Signatures — hop 1 uses the caller's root key, later hops the key
 	// pinned in their parent's signed body (offline chain of custody).
+	versionDrift := []any{}
 	var leafKeyPEM []byte
 	for i, delegation := range chain {
 		alg := delegation.Signature.Alg
@@ -109,6 +110,21 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 	// 2. Attenuation and expiry across hops.
 	for i := 0; i+1 < len(chain); i++ {
 		parent, child := chain[i], chain[i+1]
+		parentVersion := versionFromMap(parent.Actor["version"])
+		childVersion := versionFromMap(child.Actor["version"])
+		if !versionEqual(parentVersion, childVersion) {
+			from, to := map[string]any{}, map[string]any{}
+			if parentVersion != nil {
+				from = parentVersion.toMap()
+			}
+			if childVersion != nil {
+				to = childVersion.toMap()
+			}
+			versionDrift = append(versionDrift, map[string]any{
+				"type": "agent_version_drift", "from": from, "to": to,
+				"status": "noted",
+			})
+		}
 		if violation := AttenuationViolation(child.Constraints, parent.Constraints); violation != "" {
 			return fail(violation)
 		}
@@ -417,8 +433,9 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 		}
 	}
 
+	obligations = append(obligations, versionDrift...)
 	return ValidationResult{Outcome: "valid", Reason: "within constraints",
-		Obligations: obligations, ConstraintsEvaluated: evaluated}
+		Obligations: CanonicalObligations(obligations), ConstraintsEvaluated: evaluated}
 }
 
 func toDecimalValue(value any, err error) (*big.Rat, error) {
