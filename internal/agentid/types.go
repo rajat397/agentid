@@ -2,6 +2,8 @@ package agentid
 
 import (
 	"fmt"
+
+	"github.com/rajat397/agentid/attest"
 )
 
 // Delegation is one signed hop of the authority chain.
@@ -18,6 +20,7 @@ type Delegation struct {
 	Signatures         []Signature
 	Issuer             map[string]any
 	StatusList         map[string]any
+	Attestation        *attest.Attestation
 	SignerKeys         map[string]string
 }
 
@@ -38,6 +41,9 @@ func (d Delegation) UnsignedBody() map[string]any {
 	}
 	if d.StatusList != nil {
 		body["status_list"] = d.StatusList
+	}
+	if d.Attestation != nil {
+		body["attestation"] = d.Attestation
 	}
 	return body
 }
@@ -64,6 +70,7 @@ func DelegationFromMap(raw map[string]any) (Delegation, error) {
 		Signatures:         signaturesFromMap(raw["signatures"]),
 		Issuer:             AsMap(raw["issuer"]),
 		StatusList:         AsMap(raw["status_list"]),
+		Attestation:        attestationFromMap(raw["attestation"]),
 	}, nil
 }
 
@@ -222,6 +229,15 @@ func (d Delegation) ToMap() map[string]any {
 	if d.StatusList != nil {
 		out["status_list"] = d.StatusList
 	}
+	if d.Attestation != nil {
+		out["attestation"] = map[string]any{
+			"spiffe_id":         d.Attestation.SPIFFEID,
+			"credential_digest": d.Attestation.CredentialDigest,
+			"trust_domain":      d.Attestation.TrustDomain,
+			"valid_until":       d.Attestation.ValidUntil,
+			"evidence":          d.Attestation.Evidence,
+		}
+	}
 	if d.Signatures != nil {
 		out["signatures"] = signaturesToMap(d.Signatures)
 	}
@@ -229,4 +245,18 @@ func (d Delegation) ToMap() map[string]any {
 		out["signer_keys"] = SignerKeysToMap(d.SignerKeys)
 	}
 	return out
+}
+
+func attestationFromMap(value any) *attest.Attestation {
+	raw := AsMap(value)
+	if raw == nil {
+		return nil
+	}
+	return &attest.Attestation{
+		SPIFFEID:         stringField(raw, "spiffe_id"),
+		CredentialDigest: stringField(raw, "credential_digest"),
+		TrustDomain:      stringField(raw, "trust_domain"),
+		ValidUntil:       stringField(raw, "valid_until"),
+		Evidence:         stringField(raw, "evidence"),
+	}
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/rajat397/agentid/attest"
 )
 
 const timeLayout = "2006-01-02T15:04:05Z"
@@ -45,6 +47,7 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 
 	// 1. Signatures — hop 1 uses the caller's root key, later hops the key
 	// pinned in their parent's signed body (offline chain of custody).
+	var leafKeyPEM []byte
 	for i, delegation := range chain {
 		alg := delegation.Signature.Alg
 		if !profile.AllowsAlgorithm(alg) {
@@ -76,6 +79,9 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 				}
 				keyPEM = []byte(pinned)
 			}
+		}
+		if i == len(chain)-1 {
+			leafKeyPEM = keyPEM
 		}
 		key, err := ParsePublicPEM(keyPEM)
 		if err != nil || !Verify(key, delegation.UnsignedBody(), delegation.Signature.Value) {
@@ -115,6 +121,23 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 	leafExpiry, err := time.Parse(timeLayout, leaf.ExpiresAt)
 	if err != nil || leafExpiry.Before(now) {
 		return fail("delegation expired")
+	}
+	if att := leaf.Attestation; att != nil {
+		if stringField(leaf.Actor, "spiffe_id") != att.SPIFFEID {
+			return fail("attestation does not bind the actor identity")
+		}
+		validUntil, err := time.Parse(timeLayout, att.ValidUntil)
+		if err != nil || validUntil.Before(now) {
+			return fail("attestation expired")
+		}
+		actorKey := stringField(leaf.Actor, "verification_key")
+		if actorKey == "" {
+			actorKey = string(leafKeyPEM)
+		}
+		if att.CredentialDigest != "" &&
+			att.CredentialDigest != attest.CredentialDigest([]byte(actorKey)) {
+			return fail("attestation credential digest mismatch")
+		}
 	}
 	evaluated := []any{}
 	if leaf.StatusList != nil {

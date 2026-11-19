@@ -141,6 +141,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Workload attestation** — SPIFFE IDs can be bound to an attested credential
+  (dev attestor for demos; optional SPIRE Workload-API adapter); receipts record
+  the attestation digest. See [reference/attestation.md](docs/reference/attestation.md).
 - **Portable evidence bundle** — receipts, chains, profile, anchors, status
   tokens and signer keys in one offline-verifiable file; no hosted archive.
   See [reference/evidence-bundle.md](docs/reference/evidence-bundle.md).

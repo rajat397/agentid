@@ -83,14 +83,22 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 		fleet = "marketing"
 	}
 	leaf := chain[len(chain)-1]
+	actor := map[string]any{
+		"spiffe_id":      stringField(leaf.Actor, "spiffe_id"),
+		"agent_id":       stringField(leaf.Actor, "id"),
+		"credential_kid": leaf.Signature.Kid,
+	}
+	if leaf.Attestation != nil {
+		attestationJSON, err := CanonicalJSON(leaf.Attestation)
+		if err != nil {
+			return nil, ValidationResult{}, err
+		}
+		actor["attestation_digest"] = DigestSHA256(attestationJSON)
+	}
 	receipt := &Receipt{
-		IssuedAt: time.Now().UTC().Format(timeLayout),
-		Fleet:    fleet,
-		Actor: map[string]any{
-			"spiffe_id":      stringField(leaf.Actor, "spiffe_id"),
-			"agent_id":       stringField(leaf.Actor, "id"),
-			"credential_kid": leaf.Signature.Kid,
-		},
+		IssuedAt:     time.Now().UTC().Format(timeLayout),
+		Fleet:        fleet,
+		Actor:        actor,
 		DelegationID: leaf.ID,
 		Action:       stringField(action, "action"),
 		Resource: map[string]any{

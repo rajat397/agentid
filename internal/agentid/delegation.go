@@ -2,6 +2,8 @@ package agentid
 
 import (
 	"errors"
+
+	"github.com/rajat397/agentid/attest"
 )
 
 // DelegationOptions controls creation of one signed authority hop.
@@ -10,6 +12,7 @@ type DelegationOptions struct {
 	ActorPublicPEM []byte
 	IssuerID       string
 	Signer         Signer
+	Attestor       attest.Attestor
 	PQSigner       Signer
 	NoPQ           bool
 	StatusIdx      *int
@@ -82,6 +85,15 @@ func CreateDelegation(privatePEM []byte, subject map[string]any, actorID string,
 		}
 	}
 	issuer := map[string]any{"id": issuerID, "kid": KeyFingerprint(signerPublic)}
+	var attestation *attest.Attestation
+	if opts.Attestor != nil {
+		issued, err := opts.Attestor.Attest()
+		if err != nil {
+			return Delegation{}, err
+		}
+		attestation = &issued
+		spiffe = issued.SPIFFEID
+	}
 	actor := map[string]any{"type": "agent", "id": actorID, "spiffe_id": spiffe}
 	if len(opts.ActorPublicPEM) > 0 {
 		actor["verification_key"] = string(opts.ActorPublicPEM)
@@ -106,6 +118,9 @@ func CreateDelegation(privatePEM []byte, subject map[string]any, actorID string,
 		}
 		statusList = map[string]any{"idx": *opts.StatusIdx, "uri": uri}
 		body["status_list"] = statusList
+	}
+	if attestation != nil {
+		body["attestation"] = attestation
 	}
 
 	var signature Signature
@@ -157,7 +172,8 @@ func CreateDelegation(privatePEM []byte, subject map[string]any, actorID string,
 		ID: id, Subject: subject, Actor: actor, ParentDelegationID: parentID,
 		ChainDepth: depth, Constraints: constraints, IssuedAt: issued,
 		ExpiresAt: expiresAt, Signature: signature, Issuer: issuer,
-		StatusList: statusList, SignerKeys: keys, Signatures: extraSignatures,
+		StatusList: statusList, Attestation: attestation,
+		SignerKeys: keys, Signatures: extraSignatures,
 	}, nil
 }
 

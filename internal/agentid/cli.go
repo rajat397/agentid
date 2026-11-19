@@ -2,7 +2,9 @@ package agentid
 
 import (
 	"encoding/json"
+
 	"fmt"
+	"github.com/rajat397/agentid/attest"
 	"io"
 	"os"
 	"strings"
@@ -77,7 +79,13 @@ func buildDemoLedger() (*demoBundle, error) {
 		"requires_human_approval_above": map[string]any{"value": "500.00", "currency": "USD"},
 	}
 	delegation, err := CreateDelegation(nil, subject, "marketing-agent", constraints,
-		dateTimeNow().Add(30*time.Minute).Format(timeLayout), DelegationOptions{Signer: signer})
+		dateTimeNow().Add(30*time.Minute).Format(timeLayout), DelegationOptions{
+			Signer: signer,
+			Attestor: attest.DevAttestor{
+				SPIFFEID:  "spiffe://example.trust/agent/marketing-agent",
+				PublicKey: publicPEM,
+			},
+		})
 	if err != nil {
 		return nil, err
 	}
