@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **SCIM propagation** — paged SCIM 2.0 ingestion maps directory offboarding
+  to revocation status with pseudonymous-only results; webhook receiver with
+  constant-time secret. See [reference/scim-propagation.md](docs/reference/scim-propagation.md).
 - **Verification API** — mountable `/receipts/verify` and `/v1/keys` handlers
   for third parties; key set includes ES256 and ML-DSA-65. See
   [reference/verification-api.md](docs/reference/verification-api.md).
