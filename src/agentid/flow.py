@@ -7,6 +7,7 @@ constraints evaluated and the obligations produced.
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from collections.abc import Callable
 from typing import Any
 
 from .crypto import generate_keypair
@@ -42,10 +43,12 @@ def act(
     at: str | None = None,
     revoked: set[str] | None = None,
     signer: Signer | None = None,
+    status_lookup: Callable[[str, int], int] | None = None,
 ) -> tuple[Receipt, ValidationResult]:
     result = validate(chain, action_request, profile, public_pem,
                       ledger=ledger, approval=approval, at=at, revoked=revoked,
-                      public_keys=signer.public_keys() if signer is not None else None)
+                      public_keys=signer.public_keys() if signer is not None else None,
+                      status_lookup=status_lookup)
     prev_hash = ledger.receipts[-1].hash if ledger.receipts else "0" * 64
     envelope_attributes = build_envelope(action_request)["attributes"]
     decision = {

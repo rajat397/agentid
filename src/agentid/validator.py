@@ -12,6 +12,7 @@ Legacy money-first keys are translated, so previously issued grants verify.
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from collections.abc import Callable
 from typing import Any
 
 from . import envelope
@@ -85,6 +86,7 @@ def validate(
     at: str | None = None,
     revoked: set[str] | None = None,
     public_keys: dict[str, str] | None = None,
+    status_lookup: Callable[[str, int], int] | None = None,
 ) -> ValidationResult:
     now = _parse(at) if at else datetime.now(timezone.utc)
 
@@ -142,10 +144,24 @@ def validate(
                 "attenuation violated: child expiry exceeds parent",
             )
 
-    # 3. Leaf must be valid in time
+    # 3. Leaf must be valid in time and in the revocation status list.
     leaf = chain[-1]
     if _parse(leaf.expires_at) < now:
         return ValidationResult("invalid", "delegation expired")
+    status_list = getattr(leaf, "status_list", None)
+    if status_list is not None:
+        if status_lookup is None:
+            return ValidationResult(
+                "invalid",
+                "status list required but no lookup configured (fail closed)",
+            )
+        try:
+            status = status_lookup(status_list["uri"], status_list["idx"])
+        except Exception as exc:
+            return ValidationResult("invalid", f"status lookup failed: {exc}")
+        if status != 0x00:
+            name = {0x01: "revoked", 0x02: "suspended"}.get(status, "unknown")
+            return ValidationResult("invalid", f"delegation {name} (status 0x{int(status):02x})")
 
     # 4. Permission check — explicit (action, system) pair
     try:

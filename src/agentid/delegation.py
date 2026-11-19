@@ -42,6 +42,7 @@ class Delegation:
     expires_at: str
     signature: dict[str, Any]
     issuer: dict[str, Any] | None = None
+    status_list: dict[str, Any] | None = None
 
     @staticmethod
     def body(**kwargs: Any) -> dict[str, Any]:
@@ -60,6 +61,8 @@ class Delegation:
         }
         if self.issuer is not None:
             body["issuer"] = self.issuer
+        if self.status_list is not None:
+            body["status_list"] = self.status_list
         return body
 
 
@@ -74,6 +77,8 @@ def create_delegation(
     actor_public_pem: str | None = None,
     issuer_id: str | None = None,
     signer: Signer | None = None,
+    status_idx: int | None = None,
+    status_uri: str | None = None,
 ) -> Delegation:
     now = datetime.now(timezone.utc)
     issued = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -110,6 +115,11 @@ def create_delegation(
             if issuer["id"] != parent.actor["id"]:
                 raise ValueError("issuer identity does not match parent actor")
 
+    status_list = None
+    if status_idx is not None:
+        status_list = {"idx": status_idx,
+                       "uri": status_uri or "https://example.invalid/status"}
+
     body = {
         "actor": actor,
         "chain_depth": depth,
@@ -121,6 +131,8 @@ def create_delegation(
         "subject": subject,
         "issuer": issuer,
     }
+    if status_list is not None:
+        body["status_list"] = status_list
     if signer is not None:
         sig = signer.sign(body)
         signature = {"alg": "ES256", "kid": sig["kid"], "value": sig["value"]}

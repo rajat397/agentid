@@ -81,16 +81,24 @@ def _load_public(pem: str) -> ec.EllipticCurvePublicKey:
     return serialization.load_pem_public_key(pem.encode("utf-8"))
 
 
-def sign(private_pem: str, payload: dict) -> str:
+def sign_raw(private_pem: str, data: bytes) -> str:
+    """ES256 over exact bytes (used for JWS signing input and canonical JSON)."""
     key = _load_private(private_pem)
-    sig = key.sign(canonical_json(payload), ec.ECDSA(hashes.SHA256()))
-    return b64url(sig)
+    return b64url(key.sign(data, ec.ECDSA(hashes.SHA256())))
 
 
-def verify(public_pem: str, payload: dict, signature: str) -> bool:
+def verify_raw(public_pem: str, data: bytes, signature: str) -> bool:
     try:
         sig = base64.urlsafe_b64decode(signature + "=" * (-len(signature) % 4))
-        _load_public(public_pem).verify(sig, canonical_json(payload), ec.ECDSA(hashes.SHA256()))
+        _load_public(public_pem).verify(sig, data, ec.ECDSA(hashes.SHA256()))
         return True
     except Exception:
         return False
+
+
+def sign(private_pem: str, payload: dict) -> str:
+    return sign_raw(private_pem, canonical_json(payload))
+
+
+def verify(public_pem: str, payload: dict, signature: str) -> bool:
+    return verify_raw(public_pem, canonical_json(payload), signature)

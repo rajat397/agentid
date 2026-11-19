@@ -12,13 +12,17 @@ the signature `kid`, never the issuer's key fingerprint pinned in its parent.
 import warnings
 from typing import Any, Callable
 
-from .crypto import b64url, key_fingerprint, sign
+from .crypto import canonical_json, key_fingerprint, sign_raw
 
 
 class Signer:
     """Minimal contract: current kid, sign, resolve a kid to its public key."""
 
     def sign(self, payload: dict[str, Any]) -> dict[str, str]:
+        return {"alg": "ES256", "kid": self.kid,
+                "value": self.sign_raw(canonical_json(payload))}
+
+    def sign_raw(self, data: bytes) -> str:
         raise NotImplementedError
 
     def public_key(self, kid: str) -> str:
@@ -52,9 +56,8 @@ class DevSigner(Signer):
     def kid(self) -> str:
         return self._kid
 
-    def sign(self, payload: dict[str, Any]) -> dict[str, str]:
-        return {"alg": "ES256", "kid": self._kid,
-                "value": sign(self._private_pem, payload)}
+    def sign_raw(self, data: bytes) -> str:
+        return sign_raw(self._private_pem, data)
 
     def public_key(self, kid: str) -> str:
         if kid != self._kid:
@@ -83,10 +86,9 @@ class ExternalSigner(Signer):
     def kid(self) -> str:
         return self._kid
 
-    def sign(self, payload: dict[str, Any]) -> dict[str, str]:
-        from .crypto import canonical_json
-        return {"alg": "ES256", "kid": self._kid,
-                "value": b64url(self._sign_fn(canonical_json(payload)))}
+    def sign_raw(self, data: bytes) -> str:
+        from .crypto import b64url
+        return b64url(self._sign_fn(data))
 
     def public_key(self, kid: str) -> str:
         if kid != self._kid:
@@ -110,7 +112,11 @@ class RotatingSigner(Signer):
         return self._signers[0].kid
 
     def sign(self, payload: dict[str, Any]) -> dict[str, str]:
-        return self._signers[0].sign(payload)
+        signature = self._signers[0].sign(payload)
+        return {**signature, "kid": self.kid}
+
+    def sign_raw(self, data: bytes) -> str:
+        return self._signers[0].sign_raw(data)
 
     def public_key(self, kid: str) -> str:
         for signer in self._signers:

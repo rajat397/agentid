@@ -39,7 +39,7 @@ git clone https://github.com/rajat397/agentid.git
 cd agentid
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
-pytest                    # 46 tests, all passing (fixtures offline)
+pytest                    # 53 tests, all passing (fixtures offline)
 agentid demo              # the full flow, end to end
 agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
 agentid profile           # the example Validation Profile + its digest
@@ -102,6 +102,10 @@ Every claim this repository makes about a standard was checked against the norma
 - **Three mutants, executable** — leaked credential revoked and denied with
   a receipt; incident reconstructable from receipts alone; a right-to-erasure
   plan for personal data touched by agents.
+- **Revocation via IETF Token Status List** — signed `statuslist+jwt`
+  with 0x00 valid / 0x01 revoked / 0x02 suspended; cached with
+  `min(ttl, max_status_age)` and fail-closed. See
+  [reference/status-list.md](docs/reference/status-list.md).
 - **Credential-service signer boundary** — `DevSigner` (labeled not-for-
   production), `ExternalSigner` (KMS/HSM via a sign callable, no private key
   in process), `RotatingSigner` (overlap window). See
