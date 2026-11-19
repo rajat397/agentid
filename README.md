@@ -39,7 +39,7 @@ git clone https://github.com/rajat397/agentid.git
 cd agentid
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
-pytest                    # 24 tests, all passing (fixtures offline)
+pytest                    # 33 tests, all passing (fixtures offline)
 agentid demo              # the full flow, end to end
 agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
 agentid profile           # the example Validation Profile + its digest
@@ -73,6 +73,7 @@ Every claim this repository makes about a standard was checked against the norma
 | [architecture/overview.md](docs/architecture/overview.md) | The system: components, constraints, flows, the open questions |
 | [reference/standards-matrix.md](docs/reference/standards-matrix.md) | Every NIST statement → what this implementation does about it |
 | [reference/long-horizon-evidence.md](docs/reference/long-horizon-evidence.md) | RFC 3161 anchoring: design, commands, limits |
+| [reference/constraints.md](docs/reference/constraints.md) | Action envelope, predicate grammar, attenuation, legacy sugar |
 | [security/threat-model.md](docs/security/threat-model.md) | Trust zones, ten threats, control mappings, the three mutants |
 | [api/core-api.md](docs/api/core-api.md) · [api/errors.md](docs/api/errors.md) | Interface contract and error model (not a stable API — yet) |
 | [reference/verification-log.md](docs/reference/verification-log.md) | Every claim checked against its source, line by line |
@@ -82,10 +83,13 @@ Every claim this repository makes about a standard was checked against the norma
 - **Reference profile** — a content-addressed, versioned `ValidationProfile`
   (URI + SHA-256 digest) the receipts and audit trail point at.
 - **Signed delegation chain** — ES256 signatures over a human→agent grant,
-  with explicit `(action, system)` permissions, hard caps, approval
-  thresholds, and expiry.
-- **Budget-enforced entitlements** — `max_amount` and `sum_max` budget
-  accounting; an child grant can never widen its parent's authority.
+  with explicit `(action, system)` permissions and predicates over action
+  attributes (`eq, in, max, min, window, sum_max, cosign_above`); a child
+  grant can never widen its parent's authority.
+- **Universal action envelope** — every action is canonicalized as
+  `{action, system, resource, attributes}` and digested; approvals bind the
+  digest. Money is an attribute (`/attributes/amount`), not the model. See
+  [reference/constraints.md](docs/reference/constraints.md).
 - **Deterministic validator** — returns `valid / invalid / indeterminate`
   with obligations listed, per the emerging agent-delegation model.
 - **Hash-chained receipts** — tamper-evident ledger; a tampered receipt

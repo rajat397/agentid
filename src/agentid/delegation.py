@@ -1,16 +1,18 @@
 """Delegation records — the authority chain, signed and attenuating.
 
-Constraints use explicit (action, system) pairs; two independent lists would
-imply a Cartesian product of scopes (RFC 8693 §2.1.1), which is the over-grant
-this model exists to prevent. Amounts are decimal strings.
+Constraints use explicit (action, system) permissions plus predicates over
+attribute paths of the canonical action envelope (see constraints.py); two
+independent permission lists would imply a Cartesian product of scopes
+(RFC 8693 §2.1.1), which is the over-grant this model exists to prevent.
+Numeric attribute values are decimal strings.
 """
 
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Any
 
+from .constraints import attenuation_violation
 from .crypto import canonical_json, digest_sha256, sign, verify
 
 
@@ -73,14 +75,9 @@ def create_delegation(
 
     # Attenuation: a child may never exceed its parent.
     if parent is not None:
-        parent_perms = {(p["action"], p["system"]) for p in parent.constraints.get("permissions", [])}
-        child_perms = {(p["action"], p["system"]) for p in constraints.get("permissions", [])}
-        if not child_perms <= parent_perms:
-            raise ValueError("child permissions exceed parent — attenuation violated")
-        c_parent = Decimal(parent.constraints["max_amount"]["value"])
-        c_child = Decimal(constraints["max_amount"]["value"])
-        if c_child > c_parent:
-            raise ValueError("child max_amount exceeds parent — attenuation violated")
+        violation = attenuation_violation(constraints, parent.constraints)
+        if violation:
+            raise ValueError(violation)
 
     actor = {"type": "agent", "id": actor_id, "spiffe_id": spiffe}
     body = {

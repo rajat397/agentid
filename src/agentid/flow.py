@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .crypto import generate_keypair
+from .envelope import build as build_envelope, digest as envelope_digest
 from .delegation import create_delegation
 from .ledger import Ledger
 from .profile import ValidationProfile
@@ -43,10 +44,12 @@ def act(
     result = validate(chain, action_request, profile, public_pem,
                       ledger=ledger, approval=approval, at=at, revoked=revoked)
     prev_hash = ledger.receipts[-1].hash if ledger.receipts else "0" * 64
+    envelope_attributes = build_envelope(action_request)["attributes"]
     decision = {
         "result": "allowed" if result.outcome == "valid" else "denied",
         "outcome": result.outcome,
         "reason": result.reason,
+        "envelope_digest": envelope_digest(action_request),
         "constraints_evaluated": result.constraints_evaluated,
         "obligations": result.obligations,
     }
@@ -65,9 +68,7 @@ def act(
             "type": action_request.get("resource_type", "resource"),
             "id": action_request.get("resource_id", "unspecified"),
             "attributes": {
-                "amount": action_request.get("amount"),
-                "currency": action_request.get("currency", "USD"),
-                "budget_key": (action_request.get("budget_key") or ""),
+                **envelope_attributes,
                 "personal_data_refs": action_request.get("personal_data_refs", []),
             },
             "amount": action_request.get("amount", "0"),

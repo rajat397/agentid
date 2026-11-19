@@ -59,22 +59,37 @@ class Ledger:
     def receipts_personal_refs(r: Receipt) -> list[str]:
         return list(r.resource.get("attributes", {}).get("personal_data_refs", []))
 
-    def total_spend(self, root_budget: str, period_start_iso: str, currency: str) -> str:
-        """Sum amounts recorded for one root budget within a period, as a decimal string."""
+    def total_for(self, path: str, key: str, period_start_iso: str,
+                  currency: str | None = None) -> str:
+        """Sum one numeric attribute path for a root key within a period.
+
+        `path` is a pointer into the action envelope (e.g. /attributes/amount
+        or /attributes/rows); receipts record the envelope attributes.
+        """
         from decimal import Decimal
+
+        from .constraints import resolve
 
         total = Decimal("0")
         for r in self.receipts:
             if r.decision.get("result") != "allowed":
                 continue
-            if r.resource.get("attributes", {}).get("budget_key") != root_budget:
+            attributes = r.resource.get("attributes", {})
+            if attributes.get("budget_key") != key:
                 continue
-            if r.resource.get("currency") != currency:
+            if currency is not None and attributes.get("currency") != currency:
                 continue
             if r.issued_at < period_start_iso:
                 continue
-            total += Decimal(str(r.resource.get("amount", "0")))
+            try:
+                value = resolve({"attributes": attributes}, path)
+            except (KeyError, IndexError, ValueError, TypeError):
+                continue
+            total += Decimal(str(value))
         return format(total, ".2f")
+
+    def total_spend(self, root_budget: str, period_start_iso: str, currency: str) -> str:
+        return self.total_for("/attributes/amount", root_budget, period_start_iso, currency)
 
     def personal_data_index(self) -> dict[str, list[Receipt]]:
         """Map personal_data_ref -> receipts touching it (for GDPR Art. 17)."""

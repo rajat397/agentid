@@ -91,6 +91,6 @@ class ValidationProfile:
             max_token_lifetime=900,
             max_status_age=60,
             max_chain_length=3,
-            predicates=("eq", "max", "sum_max", "cosign_above", "window"),
+            predicates=("eq", "in", "max", "min", "window", "sum_max", "cosign_above"),
             status_values={"0x02": "suspended"},
         )

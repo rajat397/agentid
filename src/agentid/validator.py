@@ -4,14 +4,18 @@ Per the mechanism in draft-hulea-wimse-agent-mandate-01: evidence in,
 `valid` | `invalid` | `indeterminate` plus Obligations out. No business
 policy here; the relying party applies its own policy to this result.
 
-Constraints use explicit (action, system) pairs. Amounts are decimal strings.
+Constraints are explicit (action, system) permissions plus predicates over
+attribute paths of the canonical action envelope (see constraints.py).
+Legacy money-first keys are translated, so previously issued grants verify.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
+from . import envelope
+from .constraints import attenuation_violation, evaluate, normalize, resolve
 from .crypto import verify
 from .delegation import Delegation
 from .ledger import Ledger
@@ -30,8 +34,45 @@ def _parse(iso: str) -> datetime:
     return datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
+def _iso(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _dec(v: Any) -> Decimal:
     return Decimal(str(v))
+
+
+def _check_approval(
+    approval: dict[str, Any] | None,
+    leaf: Delegation,
+    action_request: dict[str, Any],
+    atom: dict[str, Any],
+    observed: Any,
+    now: datetime,
+) -> tuple[bool, str]:
+    if not isinstance(approval, dict):
+        return False, "no approval supplied"
+    if approval.get("delegation_id") != leaf.id:
+        return False, "approval names a different delegation"
+    if approval.get("action") != action_request["action"]:
+        return False, "approval names a different action"
+    if not approval.get("approver"):
+        return False, "approval has no approver identity"
+    if not approval.get("nonce"):
+        return False, "approval has no nonce"
+    if approval.get("expires_at") and _parse(approval["expires_at"]) < now:
+        return False, "approval expired"
+    digest = approval.get("envelope_digest")
+    if digest is not None:
+        if digest != envelope.digest(action_request):
+            return False, "approval digest does not bind this action envelope"
+        return True, "envelope-bound approval"
+    # Legacy approval shape: numeric satisfaction on the amount attribute.
+    if atom["path"] == "/attributes/amount" and approval.get("amount") is not None:
+        if _dec(approval["amount"]) >= _dec(observed):
+            return True, "legacy amount approval"
+        return False, "approval amount is below the action"
+    return False, "approval does not bind an action envelope"
 
 
 def validate(
@@ -63,18 +104,9 @@ def validate(
 
     # 2. Attenuation: every child must be within its parent
     for parent, child in zip(chain, chain[1:]):
-        parent_perms = {(p["action"], p["system"]) for p in parent.constraints.get("permissions", [])}
-        child_perms = {(p["action"], p["system"]) for p in child.constraints.get("permissions", [])}
-        if not child_perms <= parent_perms:
-            return ValidationResult(
-                "invalid",
-                "attenuation violated: child permissions exceed parent",
-            )
-        if _dec(child.constraints["max_amount"]["value"]) > _dec(parent.constraints["max_amount"]["value"]):
-            return ValidationResult(
-                "invalid",
-                "attenuation violated: child max_amount exceeds parent",
-            )
+        violation = attenuation_violation(child.constraints, parent.constraints)
+        if violation:
+            return ValidationResult("invalid", violation)
         if _parse(child.expires_at) > _parse(parent.expires_at):
             return ValidationResult(
                 "invalid",
@@ -87,76 +119,112 @@ def validate(
         return ValidationResult("invalid", "delegation expired")
 
     # 4. Permission check — explicit (action, system) pair
-    perms = {(p["action"], p["system"]) for p in leaf.constraints.get("permissions", [])}
-    want = (action_request["action"], action_request["system"])
+    try:
+        permissions, atoms = normalize(leaf.constraints)
+    except ValueError as exc:
+        return ValidationResult("invalid", f"malformed constraints: {exc}")
+
+    perms = {(p.get("action"), p.get("system")) for p in permissions}
+    want = (action_request.get("action"), action_request.get("system"))
     evaluated = [{"constraint": "permission", "pair": list(want), "satisfied": want in perms}]
     if want not in perms:
-        return ValidationResult("invalid", "action/system not permitted by delegation", constraints_evaluated=evaluated)
-
-    # 5. Budget check — root-keyed, shared across the chain (sum_max)
-    amount = _dec(action_request["amount"])
-    currency = action_request.get("currency", "USD")
-    budget = leaf.constraints.get("budget")
-    if budget:
-        budget_key = budget.get("key", "budget")
-        budget_cap = _dec(budget["value"])
-        period_start = action_request.get("period_start", "1970-01-01T00:00:00Z")
-        spent = Decimal("0")
-        if ledger is not None:
-            spent = _dec(ledger.total_spend(budget_key, period_start, currency))
-        remaining = budget_cap - spent
-        evaluated.append({"constraint": "sum_max", "budget": budget_key,
-                          "cap": str(budget_cap), "spent": str(spent),
-                          "remaining": str(remaining), "satisfied": amount <= remaining})
-        if amount > remaining:
-            return ValidationResult(
-                "invalid",
-                f"budget exhausted: {spent + amount} exceeds cap {budget_cap} for {budget_key}",
-                constraints_evaluated=evaluated,
-            )
-
-    # 6. Amount cap — max_amount (hard ceiling, independent of budget)
-    cap = _dec(leaf.constraints["max_amount"]["value"])
-    evaluated.append({"constraint": "max_amount", "bound": str(cap), "observed": str(amount),
-                      "satisfied": amount <= cap})
-    if amount > cap:
-        return ValidationResult("invalid", f"amount {amount} exceeds cap {cap}",
+        return ValidationResult("invalid", "action/system not permitted by delegation",
                                 constraints_evaluated=evaluated)
 
-    # 7. Human approval above threshold — produces an Obligation
-    threshold = _dec(leaf.constraints["requires_human_approval_above"]["value"])
-    approval_needed = amount > threshold
-    obligations: list[dict[str, Any]] = []
-    evaluated.append({"constraint": "requires_human_approval_above",
-                      "bound": str(threshold), "observed": str(amount),
-                      "satisfied": not approval_needed})
-    if approval_needed:
-        if approval is None:
-            return ValidationResult(
-                "indeterminate",
-                f"amount {amount} exceeds approval threshold {threshold}; no approval supplied",
-                obligations=[{"type": "cosign_above", "value": str(threshold),
-                              "observed": str(amount), "status": "required"}],
-                constraints_evaluated=evaluated,
-            )
-        ok = (
-            approval.get("delegation_id") == leaf.id
-            and approval.get("action") == action_request["action"]
-            and _dec(approval.get("amount", "0")) >= amount
-            and approval.get("approver")  # approver identity required
-            and approval.get("nonce")     # non-forgeable request nonce
-        )
-        evaluated.append({"constraint": "approval", "approval_id": approval.get("id"),
-                          "satisfied": ok})
-        if not ok:
+    # 4b. Every predicate used must be admitted by the Validation Profile.
+    for atom in atoms:
+        if atom["type"] not in profile.predicates:
             return ValidationResult(
                 "invalid",
-                "approval does not satisfy the cosign_above obligation",
+                f"predicate '{atom['type']}' not in profile {profile.uri or '(unnamed)'}",
                 constraints_evaluated=evaluated,
             )
-        obligations.append({"type": "cosign_above", "value": str(threshold),
-                            "observed": str(amount), "status": "discharged",
-                            "approval_id": approval.get("id")})
+
+    env = envelope.build(action_request)
+    view = {**env, "time": _iso(now)}
+    obligations: list[dict[str, Any]] = []
+
+    # 5. Predicates over attribute paths
+    for atom in atoms:
+        kind = atom["type"]
+        path = atom["path"]
+
+        if kind == "sum_max":
+            try:
+                observed = _dec(resolve(view, path))
+            except (KeyError, IndexError, ValueError, TypeError):
+                return ValidationResult("invalid", f"attribute {path} is missing",
+                                        constraints_evaluated=evaluated)
+            cap = _dec(atom["max"])
+            key = atom.get("key") or action_request.get("budget_key") or "budget"
+            period_start = action_request.get("period_start", "1970-01-01T00:00:00Z")
+            if atom.get("period_seconds"):
+                period_start = _iso(now - timedelta(seconds=int(atom["period_seconds"])))
+            currency = None
+            if path == "/attributes/amount":
+                currency = env["attributes"].get("currency", "USD")
+            spent = Decimal("0")
+            if ledger is not None:
+                spent = _dec(ledger.total_for(path, key, period_start, currency))
+            remaining = cap - spent
+            evaluated.append({"constraint": "sum_max", "path": path, "budget": key,
+                              "cap": str(cap), "spent": str(spent),
+                              "remaining": str(remaining),
+                              "satisfied": observed <= remaining})
+            if observed > remaining:
+                return ValidationResult(
+                    "invalid",
+                    f"budget exhausted: {spent + observed} exceeds cap {cap} for {key}",
+                    constraints_evaluated=evaluated,
+                )
+            continue
+
+        if kind == "cosign_above":
+            try:
+                observed = _dec(resolve(view, path))
+            except (KeyError, IndexError, ValueError, TypeError):
+                return ValidationResult("invalid", f"attribute {path} is missing",
+                                        constraints_evaluated=evaluated)
+            threshold = _dec(atom["value"])
+            approval_needed = observed > threshold
+            evaluated.append({"constraint": "cosign_above", "path": path,
+                              "bound": str(threshold), "observed": str(observed),
+                              "satisfied": not approval_needed})
+            if not approval_needed:
+                continue
+            ok, why = _check_approval(approval, leaf, action_request, atom, observed, now)
+            evaluated.append({"constraint": "approval", "approval_id": (approval or {}).get("id"),
+                              "satisfied": ok, "reason": why})
+            if not ok:
+                if approval is None:
+                    return ValidationResult(
+                        "indeterminate",
+                        f"{path} {observed} exceeds approval threshold {threshold}; no approval supplied",
+                        obligations=[{"type": "cosign_above", "path": path,
+                                      "value": str(threshold), "observed": str(observed),
+                                      "status": "required"}],
+                        constraints_evaluated=evaluated,
+                    )
+                return ValidationResult(
+                    "invalid",
+                    f"approval does not satisfy the cosign_above obligation ({why})",
+                    constraints_evaluated=evaluated,
+                )
+            obligations.append({"type": "cosign_above", "path": path,
+                                "value": str(threshold), "observed": str(observed),
+                                "status": "discharged", "approval_id": approval.get("id")})
+            continue
+
+        satisfied, observed, missing = evaluate(atom, view)
+        evaluated.append({"constraint": kind, "path": path,
+                          "bound": atom.get("value", atom.get("values", atom.get("start"))),
+                          "observed": observed, "satisfied": satisfied})
+        if not satisfied:
+            return ValidationResult(
+                "invalid",
+                f"{path} {kind} predicate violated (observed {observed!r})",
+                constraints_evaluated=evaluated,
+            )
 
     return ValidationResult("valid", "within constraints",
                             obligations=obligations,
