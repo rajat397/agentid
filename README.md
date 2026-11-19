@@ -39,7 +39,7 @@ git clone https://github.com/rajat397/agentid.git
 cd agentid
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
-pytest                    # 33 tests, all passing (fixtures offline)
+pytest                    # 40 tests, all passing (fixtures offline)
 agentid demo              # the full flow, end to end
 agentid erasure cust_4471 --demo   # GDPR-style erasure plan from receipts
 agentid profile           # the example Validation Profile + its digest
@@ -82,10 +82,13 @@ Every claim this repository makes about a standard was checked against the norma
 
 - **Reference profile** — a content-addressed, versioned `ValidationProfile`
   (URI + SHA-256 digest) the receipts and audit trail point at.
-- **Signed delegation chain** — ES256 signatures over a human→agent grant,
-  with explicit `(action, system)` permissions and predicates over action
-  attributes (`eq, in, max, min, window, sum_max, cosign_above`); a child
-  grant can never widen its parent's authority.
+- **Signed delegation chain** — ES256 signatures over a human→agent→sub-agent
+  chain, each hop signed by its issuer with the next key pinned in the
+  parent's signed body (offline verification); explicit `(action, system)`
+  permissions and predicates over action attributes
+  (`eq, in, max, min, window, sum_max, cosign_above`); a child grant can
+  never widen its parent's authority. See
+  [reference/key-chain.md](docs/reference/key-chain.md).
 - **Universal action envelope** — every action is canonicalized as
   `{action, system, resource, attributes}` and digested; approvals bind the
   digest. Money is an attribute (`/attributes/amount`), not the model. See

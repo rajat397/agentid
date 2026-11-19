@@ -16,7 +16,7 @@ from typing import Any
 
 from . import envelope
 from .constraints import attenuation_violation, evaluate, normalize, resolve
-from .crypto import verify
+from .crypto import key_fingerprint, verify
 from .delegation import Delegation
 from .ledger import Ledger
 from .profile import ValidationProfile
@@ -97,9 +97,36 @@ def validate(
             f"chain depth {len(chain)} exceeds profile max_chain_length {profile.max_chain_length}",
         )
 
-    # 1. Signatures
+    # 1. Signatures — each hop is verified by its issuer's key. For new-style
+    # grants that key is pinned in the parent's signed body (fully offline);
+    # legacy grants fall back to the caller-supplied root key.
     for i, d in enumerate(chain):
-        if not verify(public_pem, d.unsigned_body(), d.signature.get("value", "")):
+        if i == 0:
+            key = public_pem
+        else:
+            parent = chain[i - 1]
+            pinned = parent.actor.get("verification_key")
+            issuer = getattr(d, "issuer", None)
+            if pinned:
+                if not issuer or issuer.get("id") != parent.actor.get("id"):
+                    return ValidationResult(
+                        "invalid",
+                        f"chain hop {i + 1} issuer does not match parent actor",
+                    )
+                if issuer.get("kid") != key_fingerprint(pinned):
+                    return ValidationResult(
+                        "invalid",
+                        f"chain hop {i + 1} issuer key id does not match parent pin",
+                    )
+                key = pinned
+            else:
+                if issuer:
+                    return ValidationResult(
+                        "invalid",
+                        f"chain hop {i + 1} has an issuer but no parent key pin",
+                    )
+                key = public_pem
+        if not verify(key, d.unsigned_body(), d.signature.get("value", "")):
             return ValidationResult("invalid", f"invalid signature at chain hop {i + 1}")
 
     # 2. Attenuation: every child must be within its parent

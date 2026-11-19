@@ -60,6 +60,19 @@ def generate_keypair() -> tuple[str, str]:
     return private_pem, public_pem
 
 
+def public_from_private(pem: str) -> str:
+    """Derive the SPKI PEM matching a private key — used for key pinning."""
+    key = _load_private(pem)
+    return key.public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+
+
+def key_fingerprint(pem: str) -> str:
+    return f"key_{digest_sha256(pem.encode('utf-8'))[:16]}"
+
+
 def _load_private(pem: str) -> ec.EllipticCurvePrivateKey:
     return serialization.load_pem_private_key(pem.encode("utf-8"), password=None)
 

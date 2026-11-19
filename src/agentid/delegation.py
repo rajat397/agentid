@@ -13,7 +13,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .constraints import attenuation_violation
-from .crypto import canonical_json, digest_sha256, sign, verify
+from .crypto import (canonical_json, digest_sha256, key_fingerprint,
+                     public_from_private, sign, verify)
 
 
 def now_iso() -> str:
@@ -39,13 +40,14 @@ class Delegation:
     issued_at: str
     expires_at: str
     signature: dict[str, Any]
+    issuer: dict[str, Any] | None = None
 
     @staticmethod
     def body(**kwargs: Any) -> dict[str, Any]:
         return {k: v for k, v in kwargs.items() if k not in ("signature",)}
 
     def unsigned_body(self) -> dict[str, Any]:
-        return {
+        body = {
             "actor": self.actor,
             "chain_depth": self.chain_depth,
             "constraints": self.constraints,
@@ -55,6 +57,9 @@ class Delegation:
             "parent_delegation_id": self.parent_delegation_id,
             "subject": self.subject,
         }
+        if self.issuer is not None:
+            body["issuer"] = self.issuer
+        return body
 
 
 def create_delegation(
@@ -65,6 +70,8 @@ def create_delegation(
     expires_at: str,
     parent: "Delegation | None" = None,
     validity_seconds: int = 900,
+    actor_public_pem: str | None = None,
+    issuer_id: str | None = None,
 ) -> Delegation:
     now = datetime.now(timezone.utc)
     issued = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -79,7 +86,23 @@ def create_delegation(
         if violation:
             raise ValueError(violation)
 
-    actor = {"type": "agent", "id": actor_id, "spiffe_id": spiffe}
+    signer_public = public_from_private(private_pem)
+    issuer = {
+        "id": issuer_id or (parent.actor["id"] if parent else (subject or {}).get("id", "")),
+        "kid": key_fingerprint(signer_public),
+    }
+    actor: dict[str, Any] = {"type": "agent", "id": actor_id, "spiffe_id": spiffe}
+    if actor_public_pem is not None:
+        actor["verification_key"] = actor_public_pem
+
+    if parent is not None:
+        pinned = parent.actor.get("verification_key")
+        if pinned is not None:
+            if pinned.strip() != signer_public.strip():
+                raise ValueError("issuer key does not match parent's pinned actor verification_key")
+            if issuer["id"] != parent.actor["id"]:
+                raise ValueError("issuer identity does not match parent actor")
+
     body = {
         "actor": actor,
         "chain_depth": depth,
@@ -89,8 +112,9 @@ def create_delegation(
         "issued_at": issued,
         "parent_delegation_id": parent.id if parent else None,
         "subject": subject,
+        "issuer": issuer,
     }
-    signature = {"alg": "ES256", "kid": "dlg-key-2026-11",
+    signature = {"alg": "ES256", "kid": issuer["kid"],
                  "value": sign(private_pem, body)}
     return Delegation(signature=signature, **body)
 
