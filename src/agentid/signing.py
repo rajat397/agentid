@@ -129,3 +129,13 @@ class RotatingSigner(Signer):
         for signer in self._signers:
             keys.update(signer.public_keys())
         return keys
+
+
+def dual_sign(payload: dict[str, Any], signers: list[Signer]) -> list[dict[str, str]]:
+    """Sign one payload under several algorithms (migration hedge).
+
+    No PQ algorithm is implemented here; a PQ Signer may be supplied by a
+    deployment once a stable library exists. The artifact shape is unchanged:
+    the primary signature stays in `signature`, others in `signatures`.
+    """
+    return [signer.sign(payload) for signer in signers]

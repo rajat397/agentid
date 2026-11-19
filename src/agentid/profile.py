@@ -25,6 +25,7 @@ class ValidationProfile:
     max_chain_length: int
     predicates: tuple[str, ...]
     status_values: dict[str, str]
+    signature_algs: tuple[str, ...] = ("ES256",)
 
     @property
     def digest(self) -> str:
@@ -40,6 +41,7 @@ class ValidationProfile:
             "max_token_lifetime": self.max_token_lifetime,
             "predicates": list(self.predicates),
             "status_values": dict(self.status_values),
+            "signature_algs": list(self.signature_algs),
         }
 
     def document(self) -> dict[str, Any]:
@@ -79,6 +81,7 @@ class ValidationProfile:
             max_chain_length=int(raw["max_chain_length"]),
             predicates=tuple(raw["predicates"]),
             status_values=dict(raw.get("status_values", {})),
+            signature_algs=tuple(raw.get("signature_algs", ["ES256"])),
         )
 
     @staticmethod

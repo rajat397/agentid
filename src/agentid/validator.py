@@ -104,6 +104,12 @@ def validate(
     # grants that key is pinned in the parent's signed body (fully offline);
     # legacy grants fall back to the caller-supplied root key.
     for i, d in enumerate(chain):
+        alg = d.signature.get("alg", "")
+        if alg not in profile.signature_algs:
+            return ValidationResult(
+                "invalid",
+                f"signature algorithm '{alg}' not in profile allowlist",
+            )
         if i == 0:
             kid = d.signature.get("kid", "")
             key = public_keys.get(kid, public_pem) if public_keys else public_pem

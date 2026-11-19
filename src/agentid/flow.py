@@ -15,7 +15,7 @@ from .envelope import build as build_envelope, digest as envelope_digest
 from .delegation import create_delegation
 from .ledger import Ledger
 from .profile import ValidationProfile
-from .signing import Signer
+from .signing import Signer, dual_sign
 from .receipt import Receipt
 from .validator import ValidationResult, validate
 
@@ -44,6 +44,7 @@ def act(
     revoked: set[str] | None = None,
     signer: Signer | None = None,
     status_lookup: Callable[[str, int], int] | None = None,
+    extra_signers: list[Signer] | None = None,
 ) -> tuple[Receipt, ValidationResult]:
     result = validate(chain, action_request, profile, public_pem,
                       ledger=ledger, approval=approval, at=at, revoked=revoked,
@@ -89,5 +90,7 @@ def act(
     )
     if signer is not None:
         receipt.signature = signer.sign(receipt.body)
+        if extra_signers:
+            receipt.signatures = dual_sign(receipt.body, [signer, *extra_signers])
     ledger.append(receipt)
     return receipt, result

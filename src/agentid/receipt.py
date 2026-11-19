@@ -28,6 +28,7 @@ class Receipt:
     prev_hash: str
     signature_alg: str = "ES256"
     signature: dict[str, Any] | None = None
+    signatures: list[dict[str, Any]] | None = None
 
     @property
     def body(self) -> dict[str, Any]:
