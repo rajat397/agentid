@@ -56,8 +56,15 @@ until parity is explicitly signed off — it is the conformance oracle, not a
 second supported implementation. `testdata/vectors.json` pins 23 decision
 vectors, canonical/envelope digests, a Python-produced ES256 signature,
 status-list encodings and signed tokens; `go test ./...` replays them all.
-`tools/crosstest` emits Go-signed delegations, receipts and status tokens for
-verification by the Python reference in the opposite direction.
+`tools/crosstest` emits Go-signed delegations, receipts and status tokens;
+`tools/py-reference/verify_cross.py` verifies them with the Python oracle in
+the opposite direction.
+
+```bash
+(cd tools/py-reference && python3 -m pytest -q)   # frozen oracle suite
+go run ./tools/crosstest > /tmp/cross.json
+python3 tools/py-reference/verify_cross.py /tmp/cross.json
+```
 
 The demo runs a complete lifecycle — an agent issues a delegation with a hard scope, a consequential action is attempted, the observation is denied and logged, the four questions are answered from receipts, the chain is verified — and prints every step. Nothing about it is mocked or animated; `agentid demo` is the same code the tests exercise.
 
