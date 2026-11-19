@@ -1,0 +1,2666 @@
+{
+  "canon": [
+    {
+      "b64url": "rAuhGXRIp0jitA7wSD857_7rHNVe1GtIDGaOzUY2klQ",
+      "hex": "ac0ba1197448a748e2b40ef0483f39effeeb1cd55ed46b480c668ecd46369254",
+      "value": {
+        "a": 1,
+        "b": "2",
+        "c": [
+          3,
+          "4",
+          true,
+          null
+        ]
+      }
+    },
+    {
+      "b64url": "PgYqv1zSAsPAVjY5v8h-A0ZgTb8Hm8STPnfxRjKrvd8",
+      "hex": "3e062abf5cd202c3c0563639bfc87e0346604dbf079bc4933e77f14632abbddf",
+      "value": {
+        "nested": [
+          {
+            "k": "v"
+          }
+        ],
+        "z": {
+          "a": "b",
+          "y": "x"
+        }
+      }
+    },
+    {
+      "b64url": "po-bFQrr1_g9tpXO4-u9um0imaNUSylKT60ZDy-lOEw",
+      "hex": "a68f9b150aebd7f83db695cee3ebbdba6d2299a3544b294a4fad190f2fa5384c",
+      "value": {
+        "amount": "2000.00",
+        "currency": "USD",
+        "region": "eu"
+      }
+    }
+  ],
+  "crypto": {
+    "payload": {
+      "action": "support.ticket.resolve",
+      "count": "1"
+    },
+    "private_pem": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgMGJWFwP3Jw1rZZgA\ng0vwTXpCRIQuKLN2BqSzTB04GRGhRANCAASiOkOj3KyO5G9xwiVhd+PwUQM5J/Qd\n0wxGqWeJUoTZx4tiOtmLDYsu166tNrHw5U6zVc2SnJzSm+o+1oBvvWoY\n-----END PRIVATE KEY-----\n",
+    "public_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEojpDo9ysjuRvccIlYXfj8FEDOSf0\nHdMMRqlniVKE2ceLYjrZiw2LLteurTax8OVOs1XNkpyc0pvqPtaAb71qGA==\n-----END PUBLIC KEY-----\n",
+    "signature": "MEYCIQDAmSFU04OfwgBmU4M-zR4cuCYtUzD0ErojZ8tDhXMk4QIhAMw4yXcDvRIArGBBbYBWGGK9FpfviFEfm5obBgNVuGzI",
+    "verifies": true
+  },
+  "decisions": [
+    {
+      "action": {
+        "action": "ad.credit.purchase",
+        "amount": "100.00",
+        "currency": "USD",
+        "external_ref": "order_1",
+        "resource_id": "acme",
+        "resource_type": "ad_credit_account",
+        "system": "meta-ads"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "marketing-agent",
+            "spiffe_id": "spiffe://example.trust/agent/marketing-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "max_amount": {
+              "currency": "USD",
+              "value": "2000.00"
+            },
+            "permissions": [
+              {
+                "action": "ad.credit.purchase",
+                "system": "meta-ads"
+              }
+            ],
+            "requires_human_approval_above": {
+              "currency": "USD",
+              "value": "500.00"
+            }
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_88db67a830293182",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_60deb99507ce9c53"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_60deb99507ce9c53",
+            "value": "MEUCIQDRWahrsbv-nOD8ujBohk5G0879VuY4z0jQBuHEDzpnIAIgMXQQwexmEq0nQ5Gewl3R2Vg2CdGmMbP1rP_rDlFVPs0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "legacy_amount_under_threshold",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWoaCShPXJE27ne3hZFHlqiCHy31t\nq2JwT6yFUk4Mo37SVCnHaeL6UXYprhh13KyZdsK0VwFlBIHybio/UkP5nw==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "ad.credit.purchase",
+        "amount": "2000.00",
+        "currency": "USD",
+        "external_ref": "order_1",
+        "resource_id": "acme",
+        "resource_type": "ad_credit_account",
+        "system": "meta-ads"
+      },
+      "approval": {
+        "action": "ad.credit.purchase",
+        "amount": "2000.00",
+        "approver": "oidc|acme-retail|usr_8842",
+        "delegation_id": "dlg_88db67a830293182",
+        "id": "apr_v",
+        "nonce": "n1"
+      },
+      "chain": [
+        {
+          "actor": {
+            "id": "marketing-agent",
+            "spiffe_id": "spiffe://example.trust/agent/marketing-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "max_amount": {
+              "currency": "USD",
+              "value": "2000.00"
+            },
+            "permissions": [
+              {
+                "action": "ad.credit.purchase",
+                "system": "meta-ads"
+              }
+            ],
+            "requires_human_approval_above": {
+              "currency": "USD",
+              "value": "500.00"
+            }
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_88db67a830293182",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_60deb99507ce9c53"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_60deb99507ce9c53",
+            "value": "MEUCIQDRWahrsbv-nOD8ujBohk5G0879VuY4z0jQBuHEDzpnIAIgMXQQwexmEq0nQ5Gewl3R2Vg2CdGmMbP1rP_rDlFVPs0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "legacy_approval_valid",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWoaCShPXJE27ne3hZFHlqiCHy31t\nq2JwT6yFUk4Mo37SVCnHaeL6UXYprhh13KyZdsK0VwFlBIHybio/UkP5nw==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "ad.credit.purchase",
+        "amount": "2000.00",
+        "currency": "USD",
+        "external_ref": "order_1",
+        "resource_id": "acme",
+        "resource_type": "ad_credit_account",
+        "system": "meta-ads"
+      },
+      "approval": {
+        "action": "ad.credit.purchase",
+        "amount": "100.00",
+        "approver": "oidc|acme-retail|usr_8842",
+        "delegation_id": "dlg_88db67a830293182",
+        "id": "apr_bad",
+        "nonce": "n2"
+      },
+      "chain": [
+        {
+          "actor": {
+            "id": "marketing-agent",
+            "spiffe_id": "spiffe://example.trust/agent/marketing-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "max_amount": {
+              "currency": "USD",
+              "value": "2000.00"
+            },
+            "permissions": [
+              {
+                "action": "ad.credit.purchase",
+                "system": "meta-ads"
+              }
+            ],
+            "requires_human_approval_above": {
+              "currency": "USD",
+              "value": "500.00"
+            }
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_88db67a830293182",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_60deb99507ce9c53"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_60deb99507ce9c53",
+            "value": "MEUCIQDRWahrsbv-nOD8ujBohk5G0879VuY4z0jQBuHEDzpnIAIgMXQQwexmEq0nQ5Gewl3R2Vg2CdGmMbP1rP_rDlFVPs0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "approval"
+        ]
+      },
+      "name": "legacy_approval_too_small",
+      "observed_reason": "approval does not satisfy the cosign_above obligation (approval amount is below the action)",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWoaCShPXJE27ne3hZFHlqiCHy31t\nq2JwT6yFUk4Mo37SVCnHaeL6UXYprhh13KyZdsK0VwFlBIHybio/UkP5nw==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "ad.credit.purchase",
+        "amount": "5000.00",
+        "currency": "USD",
+        "external_ref": "order_1",
+        "resource_id": "acme",
+        "resource_type": "ad_credit_account",
+        "system": "meta-ads"
+      },
+      "approval": {
+        "action": "ad.credit.purchase",
+        "amount": "5000.00",
+        "approver": "oidc|acme-retail|usr_8842",
+        "delegation_id": "dlg_88db67a830293182",
+        "id": "apr_x",
+        "nonce": "n3"
+      },
+      "chain": [
+        {
+          "actor": {
+            "id": "marketing-agent",
+            "spiffe_id": "spiffe://example.trust/agent/marketing-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "max_amount": {
+              "currency": "USD",
+              "value": "2000.00"
+            },
+            "permissions": [
+              {
+                "action": "ad.credit.purchase",
+                "system": "meta-ads"
+              }
+            ],
+            "requires_human_approval_above": {
+              "currency": "USD",
+              "value": "500.00"
+            }
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_88db67a830293182",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_60deb99507ce9c53"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_60deb99507ce9c53",
+            "value": "MEUCIQDRWahrsbv-nOD8ujBohk5G0879VuY4z0jQBuHEDzpnIAIgMXQQwexmEq0nQ5Gewl3R2Vg2CdGmMbP1rP_rDlFVPs0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "max"
+        ]
+      },
+      "name": "legacy_cap_exceeded",
+      "observed_reason": "/attributes/amount max predicate violated (observed '5000.00')",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWoaCShPXJE27ne3hZFHlqiCHy31t\nq2JwT6yFUk4Mo37SVCnHaeL6UXYprhh13KyZdsK0VwFlBIHybio/UkP5nw==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "ad.credit.purchase",
+        "amount": "2000.00",
+        "currency": "USD",
+        "external_ref": "order_1",
+        "resource_id": "acme",
+        "resource_type": "ad_credit_account",
+        "system": "meta-ads"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "marketing-agent",
+            "spiffe_id": "spiffe://example.trust/agent/marketing-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "max_amount": {
+              "currency": "USD",
+              "value": "2000.00"
+            },
+            "permissions": [
+              {
+                "action": "ad.credit.purchase",
+                "system": "meta-ads"
+              }
+            ],
+            "requires_human_approval_above": {
+              "currency": "USD",
+              "value": "500.00"
+            }
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_88db67a830293182",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_60deb99507ce9c53"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_60deb99507ce9c53",
+            "value": "MEUCIQDRWahrsbv-nOD8ujBohk5G0879VuY4z0jQBuHEDzpnIAIgMXQQwexmEq0nQ5Gewl3R2Vg2CdGmMbP1rP_rDlFVPs0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "indeterminate",
+        "reason_contains": [
+          "no approval supplied"
+        ]
+      },
+      "name": "legacy_over_threshold_no_approval",
+      "observed_reason": "/attributes/amount 2000.00 exceeds approval threshold 500.00; no approval supplied",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWoaCShPXJE27ne3hZFHlqiCHy31t\nq2JwT6yFUk4Mo37SVCnHaeL6UXYprhh13KyZdsK0VwFlBIHybio/UkP5nw==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "ad.credit.purchase",
+        "amount": "500.00",
+        "budget_key": "ads_q4",
+        "currency": "USD",
+        "external_ref": "order_1",
+        "resource_id": "acme",
+        "resource_type": "ad_credit_account",
+        "system": "meta-ads"
+      },
+      "approval": {
+        "action": "ad.credit.purchase",
+        "amount": "500.00",
+        "approver": "oidc|acme-retail|usr_8842",
+        "delegation_id": "dlg_9deae9d79784724e",
+        "id": "apr_s",
+        "nonce": "n4"
+      },
+      "chain": [
+        {
+          "actor": {
+            "id": "budget-agent",
+            "spiffe_id": "spiffe://example.trust/agent/budget-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "budget": {
+              "currency": "USD",
+              "key": "ads_q4",
+              "period_seconds": 2592000,
+              "value": "2000.00"
+            },
+            "max_amount": {
+              "currency": "USD",
+              "value": "2000.00"
+            },
+            "permissions": [
+              {
+                "action": "ad.credit.purchase",
+                "system": "meta-ads"
+              }
+            ],
+            "requires_human_approval_above": {
+              "currency": "USD",
+              "value": "500.00"
+            }
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_9deae9d79784724e",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_60deb99507ce9c53"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_60deb99507ce9c53",
+            "value": "MEUCIQCct2X1rmIEqm66gCrGslGHQy5NAVBRZvrBob_7zCBckAIgEL1slorqCE2QlDgufxPotZbPBJ7yRt_LiNKGdlcAV5g"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "budget exhausted"
+        ]
+      },
+      "name": "legacy_budget_exhausted",
+      "observed_reason": "budget exhausted: 2300.00 exceeds cap 2000.00 for ads_q4",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWoaCShPXJE27ne3hZFHlqiCHy31t\nq2JwT6yFUk4Mo37SVCnHaeL6UXYprhh13KyZdsK0VwFlBIHybio/UkP5nw==\n-----END PUBLIC KEY-----\n",
+      "seeds": [
+        {
+          "attributes": {
+            "amount": "1000.00",
+            "budget_key": "ads_q4",
+            "currency": "USD"
+          },
+          "issued_at": "2026-11-01T00:00:00Z"
+        },
+        {
+          "attributes": {
+            "amount": "800.00",
+            "budget_key": "ads_q4",
+            "currency": "USD"
+          },
+          "issued_at": "2026-11-02T00:00:00Z"
+        }
+      ],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "support-agent",
+            "spiffe_id": "spiffe://example.trust/agent/support-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_0b6fb36cbb35257c",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEYCIQChFYID19UzTgdwP2dgfSxlQ5xcoorub0iqOc7PzZ5-oQIhAORY8tDY0cecRm6rEHQG_rCGIVmo_oxZtcrKERkvzGMO"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "in_valid",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "apac",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "support-agent",
+            "spiffe_id": "spiffe://example.trust/agent/support-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_0b6fb36cbb35257c",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEYCIQChFYID19UzTgdwP2dgfSxlQ5xcoorub0iqOc7PzZ5-oQIhAORY8tDY0cecRm6rEHQG_rCGIVmo_oxZtcrKERkvzGMO"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "region"
+        ]
+      },
+      "name": "in_invalid",
+      "observed_reason": "/attributes/region in predicate violated (observed 'apac')",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "51",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "support-agent",
+            "spiffe_id": "spiffe://example.trust/agent/support-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_0b6fb36cbb35257c",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEYCIQChFYID19UzTgdwP2dgfSxlQ5xcoorub0iqOc7PzZ5-oQIhAORY8tDY0cecRm6rEHQG_rCGIVmo_oxZtcrKERkvzGMO"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "count"
+        ]
+      },
+      "name": "max_invalid",
+      "observed_reason": "/attributes/count max predicate violated (observed '51')",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "0",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "support-agent",
+            "spiffe_id": "spiffe://example.trust/agent/support-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_0b6fb36cbb35257c",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEYCIQChFYID19UzTgdwP2dgfSxlQ5xcoorub0iqOc7PzZ5-oQIhAORY8tDY0cecRm6rEHQG_rCGIVmo_oxZtcrKERkvzGMO"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "count"
+        ]
+      },
+      "name": "min_invalid",
+      "observed_reason": "/attributes/count min predicate violated (observed '0')",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.purge",
+        "budget_key": "purge_q4",
+        "rows": "10",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "purge-agent",
+            "spiffe_id": "spiffe://example.trust/agent/purge-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.purge",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "key": "purge_q4",
+                "max": "100",
+                "path": "/attributes/rows",
+                "type": "sum_max"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_cde8a0bc8d708e9d",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIE4cYW5G9u2PtKAe29n95DAwgPONYhwyqNwC9JoHofpQAiEAsju9PlXYyXqnJ2cshwVtmbcFWhygODPuHs8AUjrBzE0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "sum_rows_valid",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [
+        {
+          "attributes": {
+            "budget_key": "purge_q4",
+            "rows": "60"
+          },
+          "issued_at": "2026-11-01T00:00:00Z"
+        },
+        {
+          "attributes": {
+            "budget_key": "purge_q4",
+            "rows": "30"
+          },
+          "issued_at": "2026-11-02T00:00:00Z"
+        }
+      ],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.purge",
+        "budget_key": "purge_q4",
+        "rows": "20",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "purge-agent",
+            "spiffe_id": "spiffe://example.trust/agent/purge-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.purge",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "key": "purge_q4",
+                "max": "100",
+                "path": "/attributes/rows",
+                "type": "sum_max"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_cde8a0bc8d708e9d",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIE4cYW5G9u2PtKAe29n95DAwgPONYhwyqNwC9JoHofpQAiEAsju9PlXYyXqnJ2cshwVtmbcFWhygODPuHs8AUjrBzE0"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "budget exhausted"
+        ]
+      },
+      "name": "sum_rows_exhausted",
+      "observed_reason": "budget exhausted: 110.00 exceeds cap 100 for purge_q4",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [
+        {
+          "attributes": {
+            "budget_key": "purge_q4",
+            "rows": "90"
+          },
+          "issued_at": "2026-11-01T00:00:00Z"
+        }
+      ],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "window-agent",
+            "spiffe_id": "spiffe://example.trust/agent/window-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "end": "2027-01-01T00:00:00Z",
+                "start": "2026-12-01T00:00:00Z",
+                "type": "window"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_4aba53634377b1e6",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEYCIQCvkld5ozMDEaCezoYQq24H7T_dXdqz44txJ80kBcvOxgIhAIXPICcoc2hDu0_ojIjmYFPwN8iI1sZGQ82aGXhd-guj"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "window"
+        ]
+      },
+      "name": "window_invalid",
+      "observed_reason": "/time window predicate violated (observed '2026-11-20T00:00:00Z')",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.purge",
+        "rows": "80",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "cosign-agent",
+            "spiffe_id": "spiffe://example.trust/agent/cosign-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.purge",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/rows",
+                "type": "cosign_above",
+                "value": "50"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_d06cf5dbca082fc5",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIDNAr0KDHqcP6CCXA1k4PYKfk0o0Qvd94gQq40fuS2DNAiEA0LAaN7ibIqaooM88oa6scnQTgKDwW7vjp4egjDrW9y4"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "indeterminate",
+        "reason_contains": [
+          "no approval supplied"
+        ]
+      },
+      "name": "cosign_no_approval",
+      "observed_reason": "/attributes/rows 80 exceeds approval threshold 50; no approval supplied",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.purge",
+        "rows": "80",
+        "system": "zendesk"
+      },
+      "approval": {
+        "action": "support.ticket.purge",
+        "approver": "oidc|acme-retail|usr_8842",
+        "delegation_id": "dlg_d06cf5dbca082fc5",
+        "envelope_digest": "0d4f6a82467cfac807fa589d30646aaec1677a8d8507d6a3ccd5794ec2f2eb31",
+        "id": "apr_w",
+        "nonce": "n5"
+      },
+      "chain": [
+        {
+          "actor": {
+            "id": "cosign-agent",
+            "spiffe_id": "spiffe://example.trust/agent/cosign-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.purge",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/rows",
+                "type": "cosign_above",
+                "value": "50"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_d06cf5dbca082fc5",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIDNAr0KDHqcP6CCXA1k4PYKfk0o0Qvd94gQq40fuS2DNAiEA0LAaN7ibIqaooM88oa6scnQTgKDwW7vjp4egjDrW9y4"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "digest"
+        ]
+      },
+      "name": "cosign_digest_wrong",
+      "observed_reason": "approval does not satisfy the cosign_above obligation (approval digest does not bind this action envelope)",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.purge",
+        "rows": "80",
+        "system": "zendesk"
+      },
+      "approval": {
+        "action": "support.ticket.purge",
+        "approver": "oidc|acme-retail|usr_8842",
+        "delegation_id": "dlg_d06cf5dbca082fc5",
+        "envelope_digest": "6161ee7424a1901487cde4333ef73de178ccd4e3b9b31ff693067ae6096787e2",
+        "id": "apr_r",
+        "nonce": "n6"
+      },
+      "chain": [
+        {
+          "actor": {
+            "id": "cosign-agent",
+            "spiffe_id": "spiffe://example.trust/agent/cosign-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.purge",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/rows",
+                "type": "cosign_above",
+                "value": "50"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_d06cf5dbca082fc5",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIDNAr0KDHqcP6CCXA1k4PYKfk0o0Qvd94gQq40fuS2DNAiEA0LAaN7ibIqaooM88oa6scnQTgKDwW7vjp4egjDrW9y4"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "cosign_digest_right",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "status-agent",
+            "spiffe_id": "spiffe://example.trust/agent/status-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_07e97feb00e1c00a",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIHweyCZZzSvnWmYPl9SiHdxvdkm5x2aB2fRnurKO3IedAiEAwXtwHdXvtqFRpo0Yu5ZGUYu_yOn9ADmHaQXGypre8iQ"
+          },
+          "status_list": {
+            "idx": 0,
+            "uri": "https://example.invalid/status"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "status_valid",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": 0
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "status-agent",
+            "spiffe_id": "spiffe://example.trust/agent/status-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_07e97feb00e1c00a",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIHweyCZZzSvnWmYPl9SiHdxvdkm5x2aB2fRnurKO3IedAiEAwXtwHdXvtqFRpo0Yu5ZGUYu_yOn9ADmHaQXGypre8iQ"
+          },
+          "status_list": {
+            "idx": 0,
+            "uri": "https://example.invalid/status"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "revoked"
+        ]
+      },
+      "name": "status_revoked",
+      "observed_reason": "delegation revoked (status 0x01)",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": 1
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "status-agent",
+            "spiffe_id": "spiffe://example.trust/agent/status-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_07e97feb00e1c00a",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIHweyCZZzSvnWmYPl9SiHdxvdkm5x2aB2fRnurKO3IedAiEAwXtwHdXvtqFRpo0Yu5ZGUYu_yOn9ADmHaQXGypre8iQ"
+          },
+          "status_list": {
+            "idx": 0,
+            "uri": "https://example.invalid/status"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "suspended"
+        ]
+      },
+      "name": "status_suspended",
+      "observed_reason": "delegation suspended (status 0x02)",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": 2
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "status-agent",
+            "spiffe_id": "spiffe://example.trust/agent/status-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_07e97feb00e1c00a",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIHweyCZZzSvnWmYPl9SiHdxvdkm5x2aB2fRnurKO3IedAiEAwXtwHdXvtqFRpo0Yu5ZGUYu_yOn9ADmHaQXGypre8iQ"
+          },
+          "status_list": {
+            "idx": 0,
+            "uri": "https://example.invalid/status"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "lookup"
+        ]
+      },
+      "name": "status_missing_lookup",
+      "observed_reason": "status list required but no lookup configured (fail closed)",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "agent-a",
+            "spiffe_id": "spiffe://example.trust/agent/agent-a",
+            "type": "agent",
+            "verification_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Q5ugLRw790j+zzyWKkbmSwX84jG\njwOCY4u9uCoXY0wp033XE/ZYzdtJfPBGXCzTEaKSghSqcgXu11dbybRWZA==\n-----END PUBLIC KEY-----\n"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_c52d0c30803e3f7f",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIQDLn08OLWHlnzpKv2TyV2K1SpnU85EARlhxpmOiBsKxPQIgNB6XAtinldKuaMspUG4tD1xTfwBmR6KWSJ5w8jMYiT8"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        },
+        {
+          "actor": {
+            "id": "agent-b",
+            "spiffe_id": "spiffe://example.trust/agent/agent-b",
+            "type": "agent",
+            "verification_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9IzLCWx5G+N2lMpxx4g+Wy3wJgYT\nVli3byejs3BYmqNqWs/wcKDbdXwCynqq9TZf9Vg1CqyKC1VbUxyWGvFGiw==\n-----END PUBLIC KEY-----\n"
+          },
+          "chain_depth": 2,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_ef0dd18528a90500",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "agent-a",
+            "kid": "key_12d55045d06d292f"
+          },
+          "parent_delegation_id": "dlg_c52d0c30803e3f7f",
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_12d55045d06d292f",
+            "value": "MEUCIC1rOpcuCKD04eIy8XTk8GZ_gPiQv3Rrc-XkBbBgNui_AiEArj8dmIFfB3iEQuJst3MleUa2QAKgPw1hPWKlgliAoyk"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        },
+        {
+          "actor": {
+            "id": "agent-c",
+            "spiffe_id": "spiffe://example.trust/agent/agent-c",
+            "type": "agent"
+          },
+          "chain_depth": 3,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_5a03fd3326d29c04",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "agent-b",
+            "kid": "key_be21d2d4a5a84ae0"
+          },
+          "parent_delegation_id": "dlg_ef0dd18528a90500",
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_be21d2d4a5a84ae0",
+            "value": "MEYCIQD9i07IYWzQIKUO9sunP5OD66f_3yOeDt_qFjlEeMVhrAIhAMKQYlPrU2TsEEwP1dzv74kWXJi9WAu4RiSJwYqjf7nR"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "valid",
+        "reason_contains": []
+      },
+      "name": "three_hop_chain",
+      "observed_reason": "within constraints",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "agent-a",
+            "spiffe_id": "spiffe://example.trust/agent/agent-a",
+            "type": "agent",
+            "verification_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6Q5ugLRw790j+zzyWKkbmSwX84jG\njwOCY4u9uCoXY0wp033XE/ZYzdtJfPBGXCzTEaKSghSqcgXu11dbybRWZA==\n-----END PUBLIC KEY-----\n"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_c52d0c30803e3f7f",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIQDLn08OLWHlnzpKv2TyV2K1SpnU85EARlhxpmOiBsKxPQIgNB6XAtinldKuaMspUG4tD1xTfwBmR6KWSJ5w8jMYiT8"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        },
+        {
+          "actor": {
+            "id": "agent-b",
+            "spiffe_id": "spiffe://example.trust/agent/agent-b",
+            "type": "agent",
+            "verification_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9IzLCWx5G+N2lMpxx4g+Wy3wJgYT\nVli3byejs3BYmqNqWs/wcKDbdXwCynqq9TZf9Vg1CqyKC1VbUxyWGvFGiw==\n-----END PUBLIC KEY-----\n"
+          },
+          "chain_depth": 2,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_ef0dd18528a90500",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "agent-a",
+            "kid": "key_12d55045d06d292f"
+          },
+          "parent_delegation_id": "dlg_c52d0c30803e3f7f",
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_12d55045d06d292f",
+            "value": "MEUCIC1rOpcuCKD04eIy8XTk8GZ_gPiQv3Rrc-XkBbBgNui_AiEArj8dmIFfB3iEQuJst3MleUa2QAKgPw1hPWKlgliAoyk"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        },
+        {
+          "actor": {
+            "id": "agent-c",
+            "spiffe_id": "spiffe://example.trust/agent/agent-c",
+            "type": "agent"
+          },
+          "chain_depth": 3,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_5a03fd3326d29c04",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "agent-b",
+            "kid": "key_be21d2d4a5a84ae0"
+          },
+          "parent_delegation_id": "dlg_ef0dd18528a90500",
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_be21d2d4a5a84ae0",
+            "value": "MEYCIQD9i07IYWzQIKUO9sunP5OD66f_3yOeDt_qFjlEeMVhrAIhAMKQYlPrU2TsEEwP1dzv74kWXJi9WAu4RiSJwYqjf7nR"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        },
+        {
+          "actor": {
+            "id": "agent-d",
+            "spiffe_id": "spiffe://example.trust/agent/agent-d",
+            "type": "agent"
+          },
+          "chain_depth": 4,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/region",
+                "type": "in",
+                "values": [
+                  "eu",
+                  "us"
+                ]
+              },
+              {
+                "path": "/attributes/count",
+                "type": "max",
+                "value": "50"
+              },
+              {
+                "path": "/attributes/count",
+                "type": "min",
+                "value": "1"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_e363b02a5c0eeb71",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "agent-c",
+            "kid": "key_be21d2d4a5a84ae0"
+          },
+          "parent_delegation_id": "dlg_5a03fd3326d29c04",
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_be21d2d4a5a84ae0",
+            "value": "MEYCIQDsn3pT_rB37iH8un0BNwXS4zweRoj2byKnV3kCeV84FQIhAKhAySsDULW9XA7N_5dPY-ePGy1SNANhLtVvEzT0I0Qs"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "chain depth"
+        ]
+      },
+      "name": "chain_depth_exceeded",
+      "observed_reason": "chain depth 4 exceeds profile max_chain_length 3",
+      "profile": {
+        "digest": "252ljJ5uOHskbEleiNmVrRVhRLCAUlnsbILkwYLvIpo",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "eq",
+          "in",
+          "max",
+          "min",
+          "window",
+          "sum_max",
+          "cosign_above"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    },
+    {
+      "action": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "status": "open",
+        "system": "zendesk"
+      },
+      "approval": null,
+      "chain": [
+        {
+          "actor": {
+            "id": "eq-agent",
+            "spiffe_id": "spiffe://example.trust/agent/eq-agent",
+            "type": "agent"
+          },
+          "chain_depth": 1,
+          "constraints": {
+            "permissions": [
+              {
+                "action": "support.ticket.resolve",
+                "system": "zendesk"
+              }
+            ],
+            "predicates": [
+              {
+                "path": "/attributes/status",
+                "type": "eq",
+                "value": "open"
+              }
+            ]
+          },
+          "expires_at": "2030-01-01T00:00:00Z",
+          "id": "dlg_a534dbe7e0bbc2d5",
+          "issued_at": "2026-11-19T21:34:20Z",
+          "issuer": {
+            "id": "oidc|acme-retail|usr_8842",
+            "kid": "key_6fb2e7dbcef7b5f6"
+          },
+          "parent_delegation_id": null,
+          "signature": {
+            "alg": "ES256",
+            "kid": "key_6fb2e7dbcef7b5f6",
+            "value": "MEUCIAT1q6d76dWl5PMrl1zJi89RyjeGtt_WbZ908VePwEIXAiEAxHqqA5ta4l3V7LiXbTAIajz5T_RxXxbhfPR5nyVCBBk"
+          },
+          "subject": {
+            "id": "oidc|acme-retail|usr_8842",
+            "type": "human"
+          }
+        }
+      ],
+      "expect": {
+        "outcome": "invalid",
+        "reason_contains": [
+          "profile"
+        ]
+      },
+      "name": "profile_predicate_not_allowed",
+      "observed_reason": "predicate 'eq' not in profile (unnamed)",
+      "profile": {
+        "digest": "uZrUN58TBLLMoGfPTzZAG5Ooe_BUlb3ZUe09gR9cQII",
+        "iss": "example-rp",
+        "max_chain_length": 3,
+        "max_clock_skew": 30,
+        "max_pop_window": 300,
+        "max_status_age": 60,
+        "max_token_lifetime": 900,
+        "predicates": [
+          "max"
+        ],
+        "signature_algs": [
+          "ES256"
+        ],
+        "status_values": {
+          "0x02": "suspended"
+        }
+      },
+      "root_pub": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZK5MlC0RPdvVfZ/AUXcynoyF2LK\n5uYv3k0WF15wtXTX9j4v3q7C3zeI1SQ+HQasTYHaBi4XtfVLkGgRugbyVg==\n-----END PUBLIC KEY-----\n",
+      "seeds": [],
+      "status_lookup": null
+    }
+  ],
+  "envelopes": [
+    {
+      "digest": "2d2d36daf82a9493f0c2e361482d8e5d55c148df4379c2f0e85d1a194891aa55",
+      "envelope": {
+        "action": "support.ticket.resolve",
+        "attributes": {
+          "count": "5",
+          "personal_data_refs": [
+            "cust_4471"
+          ],
+          "region": "eu"
+        },
+        "nonce": null,
+        "resource": {
+          "id": "t1",
+          "type": "ticket"
+        },
+        "system": "zendesk"
+      },
+      "request": {
+        "action": "support.ticket.resolve",
+        "count": "5",
+        "personal_data_refs": [
+          "cust_4471"
+        ],
+        "region": "eu",
+        "resource_id": "t1",
+        "resource_type": "ticket",
+        "system": "zendesk"
+      }
+    },
+    {
+      "digest": "1839e5824a5738bf39552b01017a40bee08f700adec770db3b0195352c50853d",
+      "envelope": {
+        "action": "ad.credit.purchase",
+        "attributes": {
+          "amount": "2000.00",
+          "budget_key": "ads_q4",
+          "currency": "USD"
+        },
+        "nonce": null,
+        "resource": {
+          "id": null,
+          "type": null
+        },
+        "system": "meta-ads"
+      },
+      "request": {
+        "action": "ad.credit.purchase",
+        "amount": "2000.00",
+        "budget_key": "ads_q4",
+        "currency": "USD",
+        "system": "meta-ads"
+      }
+    }
+  ],
+  "status": [
+    {
+      "encoded": {
+        "bits": 2,
+        "lst": "eNpTAQAAJQAl"
+      },
+      "statuses": [
+        0,
+        1,
+        2,
+        0
+      ]
+    },
+    {
+      "encoded": {
+        "bits": 2,
+        "lst": "eNpjAAAAAQAB"
+      },
+      "statuses": [
+        0
+      ]
+    },
+    {
+      "encoded": {
+        "bits": 2,
+        "lst": "eNpTZAQAAEUAIw"
+      },
+      "statuses": [
+        1,
+        0,
+        2,
+        0,
+        1
+      ]
+    }
+  ],
+  "status_tokens": {
+    "fresh": "eyJhbGciOiJFUzI1NiIsImtpZCI6InZlY3Rvcl9zdGF0dXNfa2V5IiwidHlwIjoic3RhdHVzbGlzdCtqd3QifQ.eyJleHAiOjE4MDAwMDA2MDAsImlhdCI6MTgwMDAwMDAwMCwic3RhdHVzX2NvdW50IjozLCJzdGF0dXNfbGlzdCI6eyJiaXRzIjoyLCJsc3QiOiJlTnBUQVFBQUpRQWwifSwic3ViIjoiaHR0cHM6Ly9leGFtcGxlLmludmFsaWQvc3RhdHVzIiwidHRsIjozMDB9.MEUCIQDiHwpU3zFW65llYII6DbpNwHk4SpzvHGsSXfVNYhDlPAIgcEor0ZnTNPNPxqOgkrSNjRdkMnTuskGJ9IbLCcsGjQ0",
+    "max_status_age": 300,
+    "now": 1800000000,
+    "public_keys": {
+      "vector_status_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWuZd/B3Dq+WooYGJoq2/mk9HobYo\ndcITENjQtamtGN+EwGTm4+b6FbS/1sXLXeKe9KnyOoDl971ANqYkDboaHQ==\n-----END PUBLIC KEY-----\n"
+    },
+    "stale": "eyJhbGciOiJFUzI1NiIsImtpZCI6InZlY3Rvcl9zdGF0dXNfa2V5IiwidHlwIjoic3RhdHVzbGlzdCtqd3QifQ.eyJleHAiOjE4MDAwMDA2MDAsImlhdCI6MTc5OTk5OTAwMCwic3RhdHVzX2NvdW50IjozLCJzdGF0dXNfbGlzdCI6eyJiaXRzIjoyLCJsc3QiOiJlTnBUQVFBQUpRQWwifSwic3ViIjoiaHR0cHM6Ly9leGFtcGxlLmludmFsaWQvc3RhdHVzIiwidHRsIjozMDB9.MEUCIHDGan67iMJvyERhzfex_xl8N74lA0Q6x2xJr2XQ1iLbAiEAqxYLlVnxgb3_zYF9ApVsCdLdo-Z51AQoHZ9X07k7vqE",
+    "status_at_1": 1
+  }
+}
