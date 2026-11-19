@@ -62,11 +62,16 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 	if err != nil {
 		return nil, ValidationResult{}, err
 	}
+	profileDigest, err := profile.Digest()
+	if err != nil {
+		return nil, ValidationResult{}, err
+	}
 	decision := map[string]any{
 		"result":                "denied",
 		"outcome":               result.Outcome,
 		"reason":                result.Reason,
 		"envelope_digest":       digest,
+		"profile_digest":        profileDigest,
 		"constraints_evaluated": result.ConstraintsEvaluated,
 		"obligations":           result.Obligations,
 	}

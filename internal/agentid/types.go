@@ -205,3 +205,28 @@ func SignerKeysToMap(keys map[string]string) map[string]any {
 	}
 	return out
 }
+
+// ToMap returns the stored JSON form of a delegation, including extra
+// signatures and the public-key registry needed for offline verification.
+func (d Delegation) ToMap() map[string]any {
+	out := map[string]any{
+		"id": d.ID, "subject": d.Subject, "actor": d.Actor,
+		"parent_delegation_id": d.ParentDelegationID,
+		"chain_depth":          d.ChainDepth, "constraints": d.Constraints,
+		"issued_at": d.IssuedAt, "expires_at": d.ExpiresAt,
+		"signature": d.Signature.toMap(),
+	}
+	if d.Issuer != nil {
+		out["issuer"] = d.Issuer
+	}
+	if d.StatusList != nil {
+		out["status_list"] = d.StatusList
+	}
+	if d.Signatures != nil {
+		out["signatures"] = signaturesToMap(d.Signatures)
+	}
+	if d.SignerKeys != nil {
+		out["signer_keys"] = SignerKeysToMap(d.SignerKeys)
+	}
+	return out
+}

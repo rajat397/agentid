@@ -29,6 +29,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdAnchor(args[1:], stdout, stderr)
 	case "verify-anchor":
 		return cmdVerifyAnchor(args[1:], stdout)
+	case "evidence":
+		return cmdEvidence(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -373,4 +375,176 @@ func cmdVerifyAnchor(args []string, stdout io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+func cmdEvidence(args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "usage: agentid evidence <export|verify>")
+		return 2
+	}
+	switch args[0] {
+	case "export":
+		outPath := "evidence-bundle.json"
+		demo := false
+		ledgerPath, delegationsPath, profilePath := "", "", ""
+		anchorsPath := ""
+		for i := 1; i < len(args); i++ {
+			switch args[i] {
+			case "--demo":
+				demo = true
+			case "--out":
+				if i+1 < len(args) {
+					i++
+					outPath = args[i]
+				}
+			case "--ledger":
+				if i+1 < len(args) {
+					i++
+					ledgerPath = args[i]
+				}
+			case "--delegations":
+				if i+1 < len(args) {
+					i++
+					delegationsPath = args[i]
+				}
+			case "--profile":
+				if i+1 < len(args) {
+					i++
+					profilePath = args[i]
+				}
+			case "--anchors":
+				if i+1 < len(args) {
+					i++
+					anchorsPath = args[i]
+				}
+			}
+		}
+		profile := ExampleProfile()
+		var ledger *Ledger
+		var delegations []Delegation
+		var statusTokens []string
+		extraKeys := map[string]string{}
+		if demo {
+			bundle, err := buildDemoLedger()
+			if err != nil {
+				fmt.Fprintln(stderr, err)
+				return 1
+			}
+			ledger = bundle.ledger
+			delegations = []Delegation{bundle.delegation}
+			token, err := BuildStatusToken("https://example.invalid/status",
+				[]int{0x00, 0x01}, bundle.signer,
+				int(dateTimeNow().Unix()), int(dateTimeNow().Unix())+600, 300)
+			if err != nil {
+				fmt.Fprintln(stderr, err)
+				return 1
+			}
+			statusTokens = append(statusTokens, token)
+		} else if ledgerPath != "" {
+			loaded, err := loadLedgerFile(ledgerPath)
+			if err != nil {
+				fmt.Fprintln(stderr, err)
+				return 1
+			}
+			ledger = loaded
+			if profilePath != "" {
+				data, err := os.ReadFile(profilePath)
+				if err != nil {
+					fmt.Fprintln(stderr, err)
+					return 1
+				}
+				value, err := DecodeJSON(data)
+				if err != nil {
+					fmt.Fprintln(stderr, err)
+					return 1
+				}
+				profile, err = ProfileFromMap(AsMap(value))
+				if err != nil {
+					fmt.Fprintln(stderr, err)
+					return 1
+				}
+			}
+			if delegationsPath != "" {
+				data, err := os.ReadFile(delegationsPath)
+				if err != nil {
+					fmt.Fprintln(stderr, err)
+					return 1
+				}
+				for _, line := range strings.Split(string(data), "\n") {
+					if strings.TrimSpace(line) == "" {
+						continue
+					}
+					value, err := DecodeJSON([]byte(line))
+					if err != nil {
+						fmt.Fprintln(stderr, err)
+						return 1
+					}
+					delegation, err := DelegationFromMap(AsMap(value))
+					if err != nil {
+						fmt.Fprintln(stderr, err)
+						return 1
+					}
+					delegations = append(delegations, delegation)
+					for kid, material := range delegation.SignerKeys {
+						extraKeys[kid] = material
+					}
+				}
+			}
+		} else {
+			fmt.Fprintln(stderr, "evidence export requires --demo or --ledger")
+			return 2
+		}
+		var anchors []map[string]any
+		if anchorsPath != "" {
+			loaded, err := LoadAnchors(anchorsPath)
+			if err != nil {
+				fmt.Fprintln(stderr, err)
+				return 1
+			}
+			anchors = loaded
+		}
+		bundle, err := BuildEvidenceBundle("default", ledger, delegations, profile,
+			anchors, statusTokens, extraKeys)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		if err := WriteBundle(outPath, bundle); err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		fmt.Fprintf(stdout, "wrote %s (digest %v, %d receipts)\n",
+			outPath, bundle.Manifest["digest"], len(bundle.Receipts))
+		return 0
+	case "verify":
+		path := ""
+		for i := 1; i < len(args); i++ {
+			if args[i] == "--file" && i+1 < len(args) {
+				i++
+				path = args[i]
+			}
+		}
+		if path == "" {
+			fmt.Fprintln(stderr, "evidence verify requires --file")
+			return 2
+		}
+		bundle, err := LoadEvidenceBundle(path)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		problems := VerifyEvidenceBundle(bundle)
+		if len(problems) > 0 {
+			for _, problem := range problems {
+				fmt.Fprintf(stdout, "FAILED: %s\n", problem)
+			}
+			return 1
+		}
+		fmt.Fprintf(stdout, "evidence bundle VERIFIED (%d receipts, %d delegations, %d anchors, %d status tokens)\n",
+			len(bundle.Receipts), len(bundle.Delegations), len(bundle.Anchors), len(bundle.StatusTokens))
+		return 0
+	default:
+		fmt.Fprintf(stderr, "unknown evidence command %q\n", args[0])
+		return 2
+	}
 }

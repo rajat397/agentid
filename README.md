@@ -44,6 +44,8 @@ go build -o agentid ./cmd/agentid
 ./agentid profile
 ./agentid verify-anchor --file tests/fixtures/demo-anchor.jsonl \
   --ledger tests/fixtures/demo-anchor.jsonl.ledger.jsonl
+./agentid evidence export --demo --out evidence-bundle.json
+./agentid evidence verify --file evidence-bundle.json
 ./agentid anchor --ledger <receipts.jsonl> [--tsa URL]   # one-time network call
 ```
 
@@ -139,6 +141,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Portable evidence bundle** — receipts, chains, profile, anchors, status
+  tokens and signer keys in one offline-verifiable file; no hosted archive.
+  See [reference/evidence-bundle.md](docs/reference/evidence-bundle.md).
 - **RFC 3161 long-horizon evidence** — the ledger head (which commits to
   every earlier receipt) is counter-signed by an independent TSA (default
   FreeTSA); anchors are stored verbatim and re-verified offline. Receipts
