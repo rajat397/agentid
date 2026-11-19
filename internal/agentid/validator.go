@@ -23,6 +23,9 @@ type ValidationOptions struct {
 // Validate is the deterministic validator split from RP policy evaluation.
 func Validate(chain []Delegation, action map[string]any, profile Profile,
 	publicPEM []byte, opts ValidationOptions) ValidationResult {
+	if err := NormalizeSensitivity(action); err != nil {
+		return ValidationResult{Outcome: "invalid", Reason: err.Error()}
+	}
 	now := time.Now().UTC()
 	if opts.At != "" {
 		if parsed, err := time.Parse(timeLayout, opts.At); err == nil {

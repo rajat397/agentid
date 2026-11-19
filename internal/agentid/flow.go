@@ -20,6 +20,9 @@ type ActOptions struct {
 // Act validates an action, mints the receipt, and appends it to the ledger.
 func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 	profile Profile, publicPEM []byte, opts ActOptions) (*Receipt, ValidationResult, error) {
+	if err := NormalizeSensitivity(action); err != nil {
+		return nil, ValidationResult{Outcome: "invalid", Reason: err.Error()}, nil
+	}
 	validationOpts := ValidationOptions{
 		Ledger: ledger, Approval: opts.Approval, At: opts.At,
 		Revoked: opts.Revoked, StatusLookup: opts.StatusLookup,
