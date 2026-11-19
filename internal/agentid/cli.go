@@ -36,6 +36,10 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdEvidence(args[1:], stdout, stderr)
 	case "serve":
 		return cmdServe(args[1:], stdout, stderr)
+	case "mcp-serve":
+		return cmdMCPServe(args[1:], stdout, stderr)
+	case "mock-ads":
+		return cmdMockAds(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -595,4 +599,58 @@ func serveError(err error) int {
 	}
 	fmt.Fprintln(os.Stderr, err)
 	return 1
+}
+
+func cmdMCPServe(args []string, stdout, stderr io.Writer) int {
+	configPath, addr := "", "127.0.0.1:8090"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--config":
+			if i+1 < len(args) {
+				i++
+				configPath = args[i]
+			}
+		case "--addr":
+			if i+1 < len(args) {
+				i++
+				addr = args[i]
+			}
+		}
+	}
+	if configPath == "" {
+		fmt.Fprintln(stderr, "mcp-serve requires --config <file>")
+		return 2
+	}
+	wrapper, err := LoadMCPWrapper(configPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "MCP wrapper mounted on %s (credentials held by wrapper)\n", addr)
+	return serveError(http.ListenAndServe(addr, NewMCPHandler(wrapper)))
+}
+
+func cmdMockAds(args []string, stdout, stderr io.Writer) int {
+	envName, addr := "MOCK_ADS_TOKEN", "127.0.0.1:8091"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--credential-env":
+			if i+1 < len(args) {
+				i++
+				envName = args[i]
+			}
+		case "--addr":
+			if i+1 < len(args) {
+				i++
+				addr = args[i]
+			}
+		}
+	}
+	credential := os.Getenv(envName)
+	if credential == "" {
+		fmt.Fprintf(stderr, "environment variable %s is not set\n", envName)
+		return 2
+	}
+	fmt.Fprintf(stdout, "mock meta-ads mounted on %s\n", addr)
+	return serveError(http.ListenAndServe(addr, MockMetaAdsHandler(credential)))
 }

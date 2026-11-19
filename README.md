@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **MCP wrapper PEP** — holds downstream credentials, maps `tools/call` into
+  action envelopes, validates before any tool execution, and receipts every
+  decision. See [reference/mcp-wrapper.md](docs/reference/mcp-wrapper.md).
 - **Sensitivity aggregation** — ordinal tier ceilings and per-tier cumulative
   exposure caps built from existing predicates. See
   [reference/sensitivity.md](docs/reference/sensitivity.md).

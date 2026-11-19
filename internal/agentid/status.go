@@ -195,3 +195,22 @@ func splitToken(token string) []string {
 }
 
 func statusTokenNow() int { return int(time.Now().Unix()) }
+
+// VerifyStatusTokenAtIssuedTime verifies signature and freshness relative to
+// the token's own iat — used for archived tokens and offline PEP caches.
+func VerifyStatusTokenAtIssuedTime(token string, publicKeys map[string]string,
+	maxStatusAge int) (map[string]any, error) {
+	parts := splitToken(token)
+	if len(parts) != 3 {
+		return nil, errors.New("malformed statuslist+jwt")
+	}
+	payloadJSON, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+	value, err := DecodeJSON(payloadJSON)
+	if err != nil {
+		return nil, err
+	}
+	return VerifyStatusToken(token, publicKeys, intValue(AsMap(value)["iat"]), maxStatusAge)
+}
