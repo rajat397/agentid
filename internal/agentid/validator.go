@@ -194,6 +194,39 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 	if err != nil {
 		return fail(err.Error())
 	}
+	obligations := []any{}
+	if profile.RequireTrustedProvenance {
+		provenance := stringValue(envelope.Attributes["provenance"])
+		if provenance != ProvenanceTrusted {
+			ok, why := checkUntrustedApproval(opts.Approval, leaf, action, now)
+			evaluated = append(evaluated, map[string]any{
+				"constraint": "provenance", "path": "/attributes/provenance",
+				"observed": provenance, "satisfied": ok,
+			})
+			if !ok {
+				if opts.Approval == nil {
+					return ValidationResult{
+						Outcome: "indeterminate",
+						Reason:  "action derived from untrusted provenance; no acknowledgement supplied",
+						Obligations: []any{map[string]any{
+							"type": "cosign_untrusted", "observed": provenance,
+							"status": "required",
+						}},
+						ConstraintsEvaluated: evaluated,
+					}
+				}
+				return ValidationResult{
+					Outcome:              "invalid",
+					Reason:               "untrusted provenance acknowledgement failed: " + why,
+					ConstraintsEvaluated: evaluated,
+				}
+			}
+			obligations = append(obligations, map[string]any{
+				"type": "cosign_untrusted", "observed": provenance,
+				"status": "discharged", "approval_id": stringField(opts.Approval, "id"),
+			})
+		}
+	}
 	view := map[string]any{
 		"action":     envelope.Action,
 		"system":     envelope.System,
@@ -202,8 +235,6 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 		"nonce":      envelope.Nonce,
 		"time":       nowISO,
 	}
-	obligations := []any{}
-
 	for _, atom := range atoms {
 		switch atom.Type {
 		case "sum_max":
@@ -377,4 +408,35 @@ func checkApproval(approval map[string]any, leaf Delegation, action map[string]a
 		return false, "approval amount is below the action"
 	}
 	return false, "approval does not bind an action envelope"
+}
+
+func checkUntrustedApproval(approval map[string]any, leaf Delegation,
+	action map[string]any, now time.Time) (bool, string) {
+	if approval == nil {
+		return false, "no approval supplied"
+	}
+	if stringField(approval, "delegation_id") != leaf.ID ||
+		stringField(approval, "action") != stringField(action, "action") {
+		return false, "approval names a different delegation or action"
+	}
+	if stringField(approval, "approver") == "" || stringField(approval, "nonce") == "" {
+		return false, "approval lacks approver or nonce"
+	}
+	if approval["acknowledges_untrusted"] != true {
+		return false, "approval does not acknowledge untrusted provenance"
+	}
+	digest := stringField(approval, "envelope_digest")
+	if digest == "" {
+		return false, "approval does not bind the action envelope"
+	}
+	want, err := EnvelopeDigest(action)
+	if err != nil || digest != want {
+		return false, "approval digest does not bind this action envelope"
+	}
+	if expiry := stringField(approval, "expires_at"); expiry != "" {
+		if parsed, err := time.Parse(timeLayout, expiry); err == nil && parsed.Before(now) {
+			return false, "approval expired"
+		}
+	}
+	return true, "envelope-bound acknowledgement"
 }

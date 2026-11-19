@@ -6,31 +6,33 @@ import (
 
 // Profile is the content-addressed validation contract from the IETF mandate draft.
 type Profile struct {
-	URI              string
-	Iss              string
-	MaxClockSkew     int
-	MaxPopWindow     int
-	MaxTokenLifetime int
-	MaxStatusAge     int
-	MaxChainLength   int
-	Predicates       []string
-	StatusValues     map[string]any
-	SignatureAlgs    []string
-	PQSign           bool
+	URI                      string
+	Iss                      string
+	MaxClockSkew             int
+	MaxPopWindow             int
+	MaxTokenLifetime         int
+	MaxStatusAge             int
+	MaxChainLength           int
+	Predicates               []string
+	StatusValues             map[string]any
+	SignatureAlgs            []string
+	PQSign                   bool
+	RequireTrustedProvenance bool
 }
 
 func (p Profile) document() map[string]any {
 	return map[string]any{
-		"iss":                p.Iss,
-		"max_chain_length":   p.MaxChainLength,
-		"max_clock_skew":     p.MaxClockSkew,
-		"max_pop_window":     p.MaxPopWindow,
-		"max_status_age":     p.MaxStatusAge,
-		"max_token_lifetime": p.MaxTokenLifetime,
-		"predicates":         p.Predicates,
-		"status_values":      p.StatusValues,
-		"signature_algs":     p.SignatureAlgs,
-		"pq_sign":            p.PQSign,
+		"iss":                        p.Iss,
+		"max_chain_length":           p.MaxChainLength,
+		"max_clock_skew":             p.MaxClockSkew,
+		"max_pop_window":             p.MaxPopWindow,
+		"max_status_age":             p.MaxStatusAge,
+		"max_token_lifetime":         p.MaxTokenLifetime,
+		"predicates":                 p.Predicates,
+		"status_values":              p.StatusValues,
+		"signature_algs":             p.SignatureAlgs,
+		"pq_sign":                    p.PQSign,
+		"require_trusted_provenance": p.RequireTrustedProvenance,
 	}
 }
 
@@ -67,6 +69,12 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 	if rawStatus, ok := raw["status_values"].(map[string]any); ok {
 		status = rawStatus
 	}
+	requireTrusted := false
+	if value, ok := raw["require_trusted_provenance"]; ok {
+		if flag, ok := value.(bool); ok {
+			requireTrusted = flag
+		}
+	}
 	pqSign := true
 	if value, ok := raw["pq_sign"]; ok {
 		if flag, ok := value.(bool); ok {
@@ -74,17 +82,18 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		}
 	}
 	return Profile{
-		URI:              stringField(raw, "uri"),
-		Iss:              stringField(raw, "iss"),
-		MaxClockSkew:     intValue(raw["max_clock_skew"]),
-		MaxPopWindow:     intValue(raw["max_pop_window"]),
-		MaxTokenLifetime: intValue(raw["max_token_lifetime"]),
-		MaxStatusAge:     intValue(raw["max_status_age"]),
-		MaxChainLength:   intValue(raw["max_chain_length"]),
-		Predicates:       predicates,
-		StatusValues:     status,
-		SignatureAlgs:    algs,
-		PQSign:           pqSign,
+		URI:                      stringField(raw, "uri"),
+		Iss:                      stringField(raw, "iss"),
+		MaxClockSkew:             intValue(raw["max_clock_skew"]),
+		MaxPopWindow:             intValue(raw["max_pop_window"]),
+		MaxTokenLifetime:         intValue(raw["max_token_lifetime"]),
+		MaxStatusAge:             intValue(raw["max_status_age"]),
+		MaxChainLength:           intValue(raw["max_chain_length"]),
+		Predicates:               predicates,
+		StatusValues:             status,
+		SignatureAlgs:            algs,
+		PQSign:                   pqSign,
+		RequireTrustedProvenance: requireTrusted,
 	}, nil
 }
 

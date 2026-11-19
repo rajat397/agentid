@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Provenance taint** — deterministic two-point lattice for injection-aware
+  authorization; untrusted actions require an envelope-bound acknowledgement.
+  See [reference/provenance.md](docs/reference/provenance.md).
 - **SCIM propagation** — paged SCIM 2.0 ingestion maps directory offboarding
   to revocation status with pseudonymous-only results; webhook receiver with
   constant-time secret. See [reference/scim-propagation.md](docs/reference/scim-propagation.md).
