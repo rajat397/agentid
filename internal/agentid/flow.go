@@ -12,6 +12,7 @@ type ActOptions struct {
 	At           string
 	Revoked      map[string]bool
 	Signer       Signer
+	PQSigner     Signer
 	ExtraSigners []Signer
 	StatusLookup func(uri string, idx int) (int, error)
 }
@@ -113,9 +114,26 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 			return nil, ValidationResult{}, fmt.Errorf("sign receipt: %w", err)
 		}
 		receipt.Signature = &signature
-		if len(opts.ExtraSigners) > 0 {
-			all := append([]Signer{opts.Signer}, opts.ExtraSigners...)
-			signatures, err := DualSign(receipt.Body(), all)
+		ledger.RegisterKeys(opts.Signer.PublicKeys())
+
+		extra := []Signer{}
+		if profile.PQSign {
+			pq := opts.PQSigner
+			if pq == nil {
+				pq, err = DefaultPQSigner()
+				if err != nil {
+					return nil, ValidationResult{}, fmt.Errorf("PQ signer: %w", err)
+				}
+			}
+			extra = append(extra, pq)
+			ledger.RegisterKeys(pq.PublicKeys())
+		}
+		extra = append(extra, opts.ExtraSigners...)
+		for _, signer := range opts.ExtraSigners {
+			ledger.RegisterKeys(signer.PublicKeys())
+		}
+		if len(extra) > 0 {
+			signatures, err := DualSign(receipt.Body(), extra)
 			if err != nil {
 				return nil, ValidationResult{}, fmt.Errorf("dual-sign receipt: %w", err)
 			}

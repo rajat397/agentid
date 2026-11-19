@@ -10,6 +10,8 @@ type DelegationOptions struct {
 	ActorPublicPEM []byte
 	IssuerID       string
 	Signer         Signer
+	PQSigner       Signer
+	NoPQ           bool
 	StatusIdx      *int
 	StatusURI      string
 }
@@ -123,11 +125,39 @@ func CreateDelegation(privatePEM []byte, subject map[string]any, actorID string,
 		}
 		signature = Signature{Alg: "ES256", Kid: stringValue(issuer["kid"]), Value: value}
 	}
+	keys := map[string]string{}
+	primaryKeys := map[string]string{}
+	if opts.Signer != nil {
+		primaryKeys = opts.Signer.PublicKeys()
+	} else {
+		primaryKeys[signature.Kid] = string(signerPublic)
+	}
+	for kid, material := range primaryKeys {
+		keys[kid] = material
+	}
+	var extraSignatures []Signature
+	if !opts.NoPQ {
+		pq := opts.PQSigner
+		if pq == nil {
+			pq, err = DefaultPQSigner()
+			if err != nil {
+				return Delegation{}, err
+			}
+		}
+		extraSignature, err := pq.Sign(body)
+		if err != nil {
+			return Delegation{}, err
+		}
+		extraSignatures = []Signature{extraSignature}
+		for kid, material := range pq.PublicKeys() {
+			keys[kid] = material
+		}
+	}
 	return Delegation{
 		ID: id, Subject: subject, Actor: actor, ParentDelegationID: parentID,
 		ChainDepth: depth, Constraints: constraints, IssuedAt: issued,
 		ExpiresAt: expiresAt, Signature: signature, Issuer: issuer,
-		StatusList: statusList,
+		StatusList: statusList, SignerKeys: keys, Signatures: extraSignatures,
 	}, nil
 }
 

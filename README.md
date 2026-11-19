@@ -49,6 +49,14 @@ go build -o agentid ./cmd/agentid
 
 Requires Go ≥ 1.27 (for `crypto/mldsa` in the standard library); no external Go modules.
 
+Delegations and receipts are **dual-signed by default**: ES256 remains the
+primary signature for compatibility, with an additive ML-DSA-65 (FIPS 204)
+signature for long-horizon authenticity. A fleet can opt out with
+`"pq_sign": false` in its Validation Profile. Measured cost (Go 1.27, 2,000
+iterations): +4.5 KB per receipt, 1.1 ms sign latency, 0.32 ms verify latency.
+Run `go run ./tools/pqbench` to reproduce. Production deployments must inject
+stable KMS/HSM-backed signers; the built-in dev keys do not survive restarts.
+
 ### Parity gate (Python reference retained)
 
 The product is Go. A frozen Python snapshot under `tools/py-reference/` is kept

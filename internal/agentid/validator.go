@@ -81,6 +81,20 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 		if err != nil || !Verify(key, delegation.UnsignedBody(), delegation.Signature.Value) {
 			return fail(fmt.Sprintf("invalid signature at chain hop %d", i+1))
 		}
+		if len(delegation.Signatures) > 0 {
+			keys := opts.PublicKeys
+			if len(keys) == 0 {
+				keys = delegation.SignerKeys
+			}
+			for j, signature := range delegation.Signatures {
+				material, ok := keys[signature.Kid]
+				if ok && !VerifySignature(signature.Alg, material,
+					delegation.UnsignedBody(), signature.Value) {
+					return fail(fmt.Sprintf(
+						"invalid additional signature[%d] at chain hop %d", j, i+1))
+				}
+			}
+		}
 	}
 
 	// 2. Attenuation and expiry across hops.

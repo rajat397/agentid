@@ -7,6 +7,7 @@
   "max_status_age": 60,
   "max_chain_length": 3,
   "predicates": ["eq", "in", "max", "min", "window", "sum_max", "cosign_above"],
+  "pq_sign": true,
   "status_values": {
     "0x02": "suspended"
   }

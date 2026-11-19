@@ -16,6 +16,7 @@ type Profile struct {
 	Predicates       []string
 	StatusValues     map[string]any
 	SignatureAlgs    []string
+	PQSign           bool
 }
 
 func (p Profile) document() map[string]any {
@@ -29,8 +30,12 @@ func (p Profile) document() map[string]any {
 		"predicates":         p.Predicates,
 		"status_values":      p.StatusValues,
 		"signature_algs":     p.SignatureAlgs,
+		"pq_sign":            p.PQSign,
 	}
 }
+
+// Document returns the content-addressed profile document.
+func (p Profile) Document() map[string]any { return p.document() }
 
 // Digest is the base64url SHA-256 of the canonical profile document.
 func (p Profile) Digest() (string, error) {
@@ -50,24 +55,23 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 			return Profile{}, errors.New("profile missing required key: " + key)
 		}
 	}
-	predicatesRaw, ok := raw["predicates"].([]any)
-	if !ok || len(predicatesRaw) == 0 {
+	predicates := stringList(raw["predicates"])
+	if len(predicates) == 0 {
 		return Profile{}, errors.New("profile.predicates must be a non-empty list")
 	}
-	predicates := make([]string, 0, len(predicatesRaw))
-	for _, value := range predicatesRaw {
-		predicates = append(predicates, stringValue(value))
-	}
-	algs := []string{"ES256"}
-	if rawAlgs, ok := raw["signature_algs"].([]any); ok {
-		algs = nil
-		for _, value := range rawAlgs {
-			algs = append(algs, stringValue(value))
-		}
+	algs := stringList(raw["signature_algs"])
+	if len(algs) == 0 {
+		algs = []string{"ES256"}
 	}
 	status := map[string]any{}
 	if rawStatus, ok := raw["status_values"].(map[string]any); ok {
 		status = rawStatus
+	}
+	pqSign := true
+	if value, ok := raw["pq_sign"]; ok {
+		if flag, ok := value.(bool); ok {
+			pqSign = flag
+		}
 	}
 	return Profile{
 		URI:              stringField(raw, "uri"),
@@ -80,6 +84,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		Predicates:       predicates,
 		StatusValues:     status,
 		SignatureAlgs:    algs,
+		PQSign:           pqSign,
 	}, nil
 }
 
@@ -96,6 +101,7 @@ func ExampleProfile() Profile {
 		Predicates:       []string{"eq", "in", "max", "min", "window", "sum_max", "cosign_above"},
 		StatusValues:     map[string]any{"0x02": "suspended"},
 		SignatureAlgs:    []string{"ES256"},
+		PQSign:           true,
 	}
 }
 
@@ -117,4 +123,21 @@ func (p Profile) AllowsAlgorithm(alg string) bool {
 		}
 	}
 	return false
+}
+
+// AllowsPQ reports whether this fleet signs with ML-DSA in addition to ES256.
+func (p Profile) AllowsPQ() bool { return p.PQSign }
+
+func stringList(value any) []string {
+	switch items := value.(type) {
+	case []string:
+		return append([]string{}, items...)
+	case []any:
+		out := make([]string, 0, len(items))
+		for _, item := range items {
+			out = append(out, stringValue(item))
+		}
+		return out
+	}
+	return nil
 }

@@ -32,9 +32,9 @@ func main() {
 	}
 	payload := map[string]any{
 		"action": "support.ticket.resolve", "system": "zendesk",
-		"resource": map[string]any{"type": "ticket", "id": "t1"},
+		"resource":   map[string]any{"type": "ticket", "id": "t1"},
 		"attributes": map[string]any{"region": "eu", "count": "5"},
-		"nonce": "bench-1",
+		"nonce":      "bench-1",
 	}
 	data, err := agentid.CanonicalJSON(payload)
 	if err != nil {
@@ -103,18 +103,21 @@ func main() {
 		"resource_type": "ticket", "resource_id": "t1",
 		"region": "eu", "count": "5", "personal_data_refs": []any{"cust_1"},
 	}
+	esProfileDoc := agentid.ExampleProfile().Document()
+	esProfileDoc["pq_sign"] = false
+	esOnlyProfile, err := agentid.ProfileFromMap(esProfileDoc)
+	if err != nil {
+		panic(err)
+	}
 	esOnlyLedger := &agentid.Ledger{}
 	esOnlyReceipt, _, err := agentid.Act(esOnlyLedger, []agentid.Delegation{delegation},
-		action, agentid.ExampleProfile(), esPub, agentid.ActOptions{Signer: esSigner})
+		action, esOnlyProfile, esPub, agentid.ActOptions{Signer: esSigner})
 	if err != nil {
 		panic(err)
 	}
 	dualLedger := &agentid.Ledger{}
 	dualReceipt, _, err := agentid.Act(dualLedger, []agentid.Delegation{delegation},
-		action, agentid.ExampleProfile(), esPub,
-		agentid.ActOptions{Signer: esSigner, ExtraSigners: []agentid.Signer{
-			&benchPQSigner{key: mlKey, kid: "bench_pq_key"},
-		}})
+		action, agentid.ExampleProfile(), esPub, agentid.ActOptions{Signer: esSigner})
 	if err != nil {
 		panic(err)
 	}
@@ -157,43 +160,4 @@ func mustPublic(raw []byte) *mldsa.PublicKey {
 		panic(err)
 	}
 	return key
-}
-
-type benchPQSigner struct {
-	key *mldsa.PrivateKey
-	kid string
-}
-
-func (s *benchPQSigner) Kid() string { return s.kid }
-
-func (s *benchPQSigner) Sign(payload any) (agentid.Signature, error) {
-	data, err := agentid.CanonicalJSON(payload)
-	if err != nil {
-		return agentid.Signature{}, err
-	}
-	raw, err := s.key.Sign(rand.Reader, data, nil)
-	if err != nil {
-		return agentid.Signature{}, err
-	}
-	return agentid.Signature{Alg: "ML-DSA-65", Kid: s.kid,
-		Value: base64.RawURLEncoding.EncodeToString(raw)}, nil
-}
-
-func (s *benchPQSigner) SignRaw(data []byte) (string, error) {
-	raw, err := s.key.Sign(rand.Reader, data, nil)
-	if err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(raw), nil
-}
-
-func (s *benchPQSigner) PublicKey(kid string) (string, error) {
-	if kid != s.kid {
-		return "", fmt.Errorf("unknown kid %q", kid)
-	}
-	return base64.RawURLEncoding.EncodeToString(s.key.PublicKey().Bytes()), nil
-}
-
-func (s *benchPQSigner) PublicKeys() map[string]string {
-	return map[string]string{s.kid: base64.RawURLEncoding.EncodeToString(s.key.PublicKey().Bytes())}
 }

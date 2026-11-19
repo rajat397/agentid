@@ -128,7 +128,7 @@ func cmdDemo(stdout, stderr io.Writer) int {
 		stringField(bundle.allowed.Actor, "credential_kid"),
 		stringField(bundle.approval, "id"))
 	bundle.ledger.Receipts[0].Action = "social.post.publish"
-	problems := bundle.ledger.VerifyChain(bundle.signer.PublicKeys())
+	problems := bundle.ledger.VerifyChain(bundle.ledger.SignerKeys)
 	fmt.Fprintf(stdout, "5. Tampered receipt: signatures + hash chain verify: %t (%s)\n",
 		len(problems) == 0, firstProblem(problems))
 	return 0

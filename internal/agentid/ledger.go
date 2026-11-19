@@ -6,7 +6,20 @@ import (
 )
 
 // Ledger is an append-only, hash-chained receipt trail.
-type Ledger struct{ Receipts []*Receipt }
+type Ledger struct {
+	Receipts   []*Receipt
+	SignerKeys map[string]string
+}
+
+// RegisterKeys records public key material used to sign receipts in this ledger.
+func (l *Ledger) RegisterKeys(keys map[string]string) {
+	if l.SignerKeys == nil {
+		l.SignerKeys = map[string]string{}
+	}
+	for kid, material := range keys {
+		l.SignerKeys[kid] = material
+	}
+}
 
 // Append links a receipt to the current chain head and assigns its id.
 func (l *Ledger) Append(receipt *Receipt) error {
@@ -58,7 +71,7 @@ func (l *Ledger) VerifyHashes() []string {
 	return problems
 }
 
-// VerifyChain checks hash links and, when keys are supplied, ES256 signatures.
+// VerifyChain checks hash links and all available signatures by algorithm.
 func (l *Ledger) VerifyChain(publicKeys map[string]string) []string {
 	problems := []string{}
 	expected := stringsRepeatedZero
@@ -69,17 +82,30 @@ func (l *Ledger) VerifyChain(publicKeys map[string]string) []string {
 				i, expected[:12], receipt.PrevHash[:min(12, len(receipt.PrevHash))]))
 			break
 		}
+		keys := publicKeys
+		if keys == nil {
+			keys = l.SignerKeys
+		}
 		if receipt.Signature != nil {
-			if publicKeys == nil {
+			material, ok := keys[receipt.Signature.Kid]
+			if !ok {
 				problems = append(problems, fmt.Sprintf(
 					"receipt[%d] signature not verified: no public keys supplied", i))
-			} else {
-				pem, ok := publicKeys[receipt.Signature.Kid]
-				key, parseErr := ParsePublicPEM([]byte(pem))
-				if !ok || parseErr != nil || !Verify(key, receipt.Body(), receipt.Signature.Value) {
-					problems = append(problems, fmt.Sprintf(
-						"receipt[%d] signature invalid or kid unknown", i))
-				}
+			} else if !VerifySignature(receipt.Signature.Alg, material,
+				receipt.Body(), receipt.Signature.Value) {
+				problems = append(problems, fmt.Sprintf(
+					"receipt[%d] signature invalid or kid unknown", i))
+			}
+		}
+		for j, signature := range receipt.Signatures {
+			material, ok := keys[signature.Kid]
+			if !ok {
+				problems = append(problems, fmt.Sprintf(
+					"receipt[%d] additional signature[%d] not verified: key unknown", i, j))
+			} else if !VerifySignature(signature.Alg, material,
+				receipt.Body(), signature.Value) {
+				problems = append(problems, fmt.Sprintf(
+					"receipt[%d] additional signature[%d] invalid", i, j))
 			}
 		}
 		hash, err := receipt.Hash()

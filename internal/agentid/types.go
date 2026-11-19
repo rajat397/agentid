@@ -15,8 +15,10 @@ type Delegation struct {
 	IssuedAt           string
 	ExpiresAt          string
 	Signature          Signature
+	Signatures         []Signature
 	Issuer             map[string]any
 	StatusList         map[string]any
+	SignerKeys         map[string]string
 }
 
 // UnsignedBody is the exact signed payload, excluding the signature.
@@ -59,6 +61,7 @@ func DelegationFromMap(raw map[string]any) (Delegation, error) {
 		IssuedAt:           stringField(raw, "issued_at"),
 		ExpiresAt:          stringField(raw, "expires_at"),
 		Signature:          signatureFromMap(raw["signature"]),
+		Signatures:         signaturesFromMap(raw["signatures"]),
 		Issuer:             AsMap(raw["issuer"]),
 		StatusList:         AsMap(raw["status_list"]),
 	}, nil
@@ -170,6 +173,35 @@ func (r Receipt) ToMap() map[string]any {
 			})
 		}
 		out["signatures"] = items
+	}
+	return out
+}
+
+func signaturesFromMap(value any) []Signature {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]Signature, 0, len(items))
+	for _, item := range items {
+		out = append(out, signatureFromMap(item))
+	}
+	return out
+}
+
+func signaturesToMap(signatures []Signature) []any {
+	out := []any{}
+	for _, signature := range signatures {
+		out = append(out, signature.toMap())
+	}
+	return out
+}
+
+// SignerKeysToMap exports the verified public-key registry for an artifact.
+func SignerKeysToMap(keys map[string]string) map[string]any {
+	out := map[string]any{}
+	for kid, material := range keys {
+		out[kid] = material
 	}
 	return out
 }

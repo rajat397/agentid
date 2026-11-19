@@ -71,7 +71,7 @@ func TestGoCreatesSignedChainAndReceipts(t *testing.T) {
 	if receipt.Signature == nil || receipt.Signature.Kid != "sub_key" {
 		t.Fatalf("receipt not signed by current signer: %+v", receipt.Signature)
 	}
-	if problems := ledger.VerifyChain(subSigner.PublicKeys()); len(problems) > 0 {
+	if problems := ledger.VerifyChain(ledger.SignerKeys); len(problems) > 0 {
 		t.Fatalf("chain verification: %v", problems)
 	}
 }
@@ -100,7 +100,7 @@ func TestReceiptSignatureTamperDetected(t *testing.T) {
 		t.Fatal(err)
 	}
 	receipt.Signature.Value = "tampered"
-	problems := ledger.VerifyChain(signer.PublicKeys())
+	problems := ledger.VerifyChain(ledger.SignerKeys)
 	if len(problems) == 0 || !strings.Contains(problems[0], "signature") {
 		t.Fatalf("tampered signature accepted: %v", problems)
 	}
