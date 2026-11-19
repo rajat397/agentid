@@ -46,6 +46,7 @@ go build -o agentid ./cmd/agentid
   --ledger tests/fixtures/demo-anchor.jsonl.ledger.jsonl
 ./agentid evidence export --demo --out evidence-bundle.json
 ./agentid evidence verify --file evidence-bundle.json
+./agentid serve --bundle evidence-bundle.json --addr 127.0.0.1:8080   # /receipts/verify + /v1/keys
 ./agentid anchor --ledger <receipts.jsonl> [--tsa URL]   # one-time network call
 ```
 
@@ -141,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Verification API** — mountable `/receipts/verify` and `/v1/keys` handlers
+  for third parties; key set includes ES256 and ML-DSA-65. See
+  [reference/verification-api.md](docs/reference/verification-api.md).
 - **Workload attestation** — SPIFFE IDs can be bound to an attested credential
   (dev attestor for demos; optional SPIRE Workload-API adapter); receipts record
   the attestation digest. See [reference/attestation.md](docs/reference/attestation.md).

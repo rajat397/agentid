@@ -155,6 +155,7 @@ func ReceiptFromMap(raw map[string]any) Receipt {
 		value := signatureFromMap(signature)
 		receipt.Signature = &value
 	}
+	receipt.Signatures = signaturesFromMap(raw["signatures"])
 	return receipt
 }
 

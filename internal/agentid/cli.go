@@ -2,13 +2,14 @@ package agentid
 
 import (
 	"encoding/json"
-
 	"fmt"
-	"github.com/rajat397/agentid/attest"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/rajat397/agentid/attest"
 )
 
 // Run dispatches the agentid CLI. It returns a process exit code.
@@ -33,6 +34,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdVerifyAnchor(args[1:], stdout)
 	case "evidence":
 		return cmdEvidence(args[1:], stdout, stderr)
+	case "serve":
+		return cmdServe(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -555,4 +558,41 @@ func cmdEvidence(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "unknown evidence command %q\n", args[0])
 		return 2
 	}
+}
+
+func cmdServe(args []string, stdout, stderr io.Writer) int {
+	bundlePath, addr := "", "127.0.0.1:8080"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--bundle":
+			if i+1 < len(args) {
+				i++
+				bundlePath = args[i]
+			}
+		case "--addr":
+			if i+1 < len(args) {
+				i++
+				addr = args[i]
+			}
+		}
+	}
+	if bundlePath == "" {
+		fmt.Fprintln(stderr, "serve requires --bundle <evidence-bundle.json>")
+		return 2
+	}
+	bundle, err := LoadEvidenceBundle(bundlePath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "mounting /receipts/verify and /v1/keys on %s (caller-owned infrastructure)\n", addr)
+	return serveError(http.ListenAndServe(addr, NewVerificationHandler(bundle.SignerKeys)))
+}
+
+func serveError(err error) int {
+	if err == nil {
+		return 0
+	}
+	fmt.Fprintln(os.Stderr, err)
+	return 1
 }
