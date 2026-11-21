@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Erasure executor** — explicit connector outcomes, chained deletion receipts,
+  fail-closed `ERASURE_INCOMPLETE` and residue verification. See
+  [reference/erasure-executor.md](docs/reference/erasure-executor.md).
 - **Retention export** — 13-month archive-before-prune with ARCHIVE receipts
   and erasure tombstones that preserve the hash chain. See
   [reference/retention.md](docs/reference/retention.md).

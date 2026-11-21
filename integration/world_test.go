@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -17,27 +18,32 @@ import (
 // World is an isolated, in-process deployment used by real-world scenarios.
 // Every dependency is a local fixture: no network, no cloud, no shared state.
 type World struct {
-	t              *testing.T
-	signer         *agentid.DevSigner
-	rootPub        []byte
-	delegation     agentid.Delegation
-	profile        agentid.Profile
-	statusToken    string
-	statusKeys     map[string]string
-	statuses       []int
-	wrapper        *agentid.MCPWrapper
-	adsCalls       *int64
-	scimActive     *atomic.Bool
-	tsaURL         string
-	tsaCalls       *int64
-	bucketDir      string
-	bucketSigner   agentid.Signer
-	bucketStamps   []map[string]any
-	retentionDir   string
-	archivePath    string
-	archiveReceipt *agentid.Receipt
-	tombstones     []string
-	anchorMgr      interface {
+	t               *testing.T
+	signer          *agentid.DevSigner
+	rootPub         []byte
+	delegation      agentid.Delegation
+	profile         agentid.Profile
+	statusToken     string
+	statusKeys      map[string]string
+	statuses        []int
+	wrapper         *agentid.MCPWrapper
+	adsCalls        *int64
+	scimActive      *atomic.Bool
+	tsaURL          string
+	tsaCalls        *int64
+	bucketDir       string
+	bucketSigner    agentid.Signer
+	bucketStamps    []map[string]any
+	retentionDir    string
+	archivePath     string
+	archiveReceipt  *agentid.Receipt
+	tombstones      []string
+	zendesk         *mockDownstream
+	crm             *mockDownstream
+	erasureReceipts []*agentid.Receipt
+	erasureError    error
+	verifyProblems  []string
+	anchorMgr       interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
 	scimClient  agentid.SCIMClient
@@ -354,4 +360,65 @@ func (w *World) TombstoneSubject() {
 func (w *World) ArchiveProblem() []string {
 	w.t.Helper()
 	return agentid.VerifyArchive(w.archivePath, w.archiveReceipt)
+}
+
+type mockDownstream struct {
+	system  string
+	records map[string]bool
+	fail    bool
+	url     string
+}
+
+func (m *mockDownstream) handler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if m.fail {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ref := strings.TrimPrefix(r.URL.Path, "/subjects/")
+		if r.Method == http.MethodDelete {
+			if !m.records[ref] {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			delete(m.records, ref)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if m.records[ref] {
+			json.NewEncoder(w).Encode(map[string]any{"found": true})
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+}
+
+func (w *World) erasureConnectors() []agentid.DownstreamConnector {
+	w.t.Helper()
+	for _, system := range []*mockDownstream{w.zendesk, w.crm} {
+		if system.url == "" {
+			server := httptest.NewServer(system.handler())
+			w.t.Cleanup(server.Close)
+			system.url = server.URL
+		}
+	}
+	return []agentid.DownstreamConnector{
+		agentid.HTTPConnector{SystemName: w.zendesk.system,
+			BaseURL: w.zendesk.url, Credential: "mock-credential"},
+		agentid.HTTPConnector{SystemName: w.crm.system,
+			BaseURL: w.crm.url, Credential: "mock-credential"},
+	}
+}
+
+func (w *World) ErasureExec() {
+	w.t.Helper()
+	receipts, err := agentid.ExecuteErasure(w.ledger, "ers_1", "cust_4471",
+		w.erasureConnectors(), time.Now())
+	w.erasureReceipts = append(w.erasureReceipts, receipts...)
+	w.erasureError = err
+}
+
+func (w *World) ErasureVerify() {
+	w.t.Helper()
+	w.verifyProblems = agentid.VerifyErasure(w.erasureConnectors(), "cust_4471")
 }

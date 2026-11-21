@@ -44,6 +44,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdAnchorWatch(args[1:], stdout, stderr)
 	case "retention":
 		return cmdRetention(args[1:], stdout, stderr)
+	case "erasure-exec":
+		return cmdErasureExec(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -821,5 +823,85 @@ func cmdRetention(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	fmt.Fprintf(stdout, "archived to %s (receipt %s)\n", path, receipt.ID)
+	return 0
+}
+
+type erasureConnectorConfig struct {
+	System        string `json:"system"`
+	URL           string `json:"url"`
+	CredentialEnv string `json:"credential_env"`
+}
+
+func cmdErasureExec(args []string, stdout, stderr io.Writer) int {
+	subject, ledgerPath, configPath, requestID := "", "", "", "erasure_request"
+	verify := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--subject":
+			if i+1 < len(args) {
+				i++
+				subject = args[i]
+			}
+		case "--ledger":
+			if i+1 < len(args) {
+				i++
+				ledgerPath = args[i]
+			}
+		case "--config":
+			if i+1 < len(args) {
+				i++
+				configPath = args[i]
+			}
+		case "--request":
+			if i+1 < len(args) {
+				i++
+				requestID = args[i]
+			}
+		case "--verify":
+			verify = true
+		}
+	}
+	if subject == "" || ledgerPath == "" || configPath == "" {
+		fmt.Fprintln(stderr, "erasure-exec requires --subject, --ledger and --config")
+		return 2
+	}
+	ledger, err := loadLedgerFile(ledgerPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	var configs []erasureConnectorConfig
+	if err := json.Unmarshal(data, &configs); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	connectors := []DownstreamConnector{}
+	for _, config := range configs {
+		connectors = append(connectors, HTTPConnector{
+			SystemName: config.System, BaseURL: config.URL,
+			CredentialEnv: config.CredentialEnv,
+		})
+	}
+	receipts, err := ExecuteErasure(ledger, requestID, subject, connectors, time.Now())
+	if err != nil {
+		fmt.Fprintf(stderr, "%v\n", err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "%d deletion receipts minted\n", len(receipts))
+	if verify {
+		problems := VerifyErasure(connectors, subject)
+		for _, problem := range problems {
+			fmt.Fprintf(stdout, "%s\n", problem)
+		}
+		if len(problems) > 0 {
+			return 1
+		}
+		fmt.Fprintln(stdout, "all systems verified absent")
+	}
 	return 0
 }
