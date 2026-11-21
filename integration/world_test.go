@@ -43,6 +43,10 @@ type World struct {
 	erasureReceipts []*agentid.Receipt
 	erasureError    error
 	verifyProblems  []string
+	evidenceSpans   []map[string]any
+	spanProblems    []string
+	spanTraceID     string
+	trace           agentid.TraceContext
 	anchorMgr       interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
@@ -137,6 +141,10 @@ func NewWorld(t *testing.T) *World {
 		t.Fatal(err)
 	}
 	profile := agentid.ExampleProfile()
+	trace, err := agentid.NewTraceContext()
+	if err != nil {
+		t.Fatal(err)
+	}
 	registry, err := agentid.OpenFileRegistry(t.TempDir() + "/registry.jsonl")
 	if err != nil {
 		t.Fatal(err)
@@ -165,6 +173,7 @@ func NewWorld(t *testing.T) *World {
 		Tools: []agentid.ToolMapping{mapping}, Chain: []agentid.Delegation{delegation},
 		Profile: profile, RootKeyPEM: publicPEM, Signer: signer,
 		Fleet: "integration", StatusToken: token, StatusKeys: signer.PublicKeys(),
+		Trace: &trace,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -421,4 +430,39 @@ func (w *World) ErasureExec() {
 func (w *World) ErasureVerify() {
 	w.t.Helper()
 	w.verifyProblems = agentid.VerifyErasure(w.erasureConnectors(), "cust_4471")
+}
+
+func (w *World) EvidenceSpans() {
+	w.t.Helper()
+	receipt := w.ledger.Receipts[0]
+	trace := agentid.TraceContext{
+		TraceID: agentid.StringValue(receipt.Decision["trace_id"]),
+		SpanID:  agentid.StringValue(receipt.Decision["span_id"]),
+	}
+	w.trace = trace
+	w.spanTraceID = trace.TraceID
+	w.evidenceSpans = agentid.BuildEvidenceSpans(receipt, w.delegation, trace, false)
+}
+
+func mismatchStrings(mismatches []agentid.Mismatch) []string {
+	out := []string{}
+	for _, mismatch := range mismatches {
+		out = append(out, mismatch.Type+":"+mismatch.Detail)
+	}
+	return out
+}
+
+func (w *World) SpanProblems() []string {
+	w.t.Helper()
+	return mismatchStrings(agentid.ReconcileEvidenceSpans(w.evidenceSpans, w.ledger))
+}
+
+func spanSetJSON(spans []map[string]any) string {
+	data, _ := json.Marshal(spans)
+	return string(data)
+}
+
+func (w *World) SpanProblemsFor(spans []map[string]any) []string {
+	w.t.Helper()
+	return mismatchStrings(agentid.ReconcileEvidenceSpans(spans, w.ledger))
 }

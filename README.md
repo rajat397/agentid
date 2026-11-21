@@ -142,6 +142,10 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **OTel evidence layer** — five mutually-bound spans, W3C propagation, a
+  caller-owned reconciliation collector emitting `agentid.mismatch`, pseudonymous
+  defaults and erasure hints. See
+  [reference/otel-evidence.md](docs/reference/otel-evidence.md).
 - **Erasure executor** — explicit connector outcomes, chained deletion receipts,
   fail-closed `ERASURE_INCOMPLETE` and residue verification. See
   [reference/erasure-executor.md](docs/reference/erasure-executor.md).

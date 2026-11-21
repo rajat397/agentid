@@ -46,6 +46,10 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdRetention(args[1:], stdout, stderr)
 	case "erasure-exec":
 		return cmdErasureExec(args[1:], stdout, stderr)
+	case "otel-serve":
+		return cmdOTelServe(args[1:], stdout, stderr)
+	case "otel-demo":
+		return cmdOTelDemo(stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -903,5 +907,54 @@ func cmdErasureExec(args []string, stdout, stderr io.Writer) int {
 		}
 		fmt.Fprintln(stdout, "all systems verified absent")
 	}
+	return 0
+}
+
+func cmdOTelServe(args []string, stdout, stderr io.Writer) int {
+	ledgerPath, addr := "", "127.0.0.1:4318"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--ledger":
+			if i+1 < len(args) {
+				i++
+				ledgerPath = args[i]
+			}
+		case "--addr":
+			if i+1 < len(args) {
+				i++
+				addr = args[i]
+			}
+		}
+	}
+	if ledgerPath == "" {
+		fmt.Fprintln(stderr, "otel-serve requires --ledger <receipts.jsonl>")
+		return 2
+	}
+	ledger, err := loadLedgerFile(ledgerPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "reconciling collector on %s (/v1/traces, /metrics)\n", addr)
+	return serveError(http.ListenAndServe(addr, NewCollector(ledger).Handler()))
+}
+
+func cmdOTelDemo(stdout, stderr io.Writer) int {
+	bundle, err := buildDemoLedger()
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	receipt := bundle.ledger.Receipts[1]
+	trace := TraceContext{
+		TraceID: stringField(receipt.Decision, "trace_id"),
+		SpanID:  stringField(receipt.Decision, "span_id"),
+	}
+	spans := BuildEvidenceSpans(receipt, bundle.delegation, trace, false)
+	result := NewCollector(bundle.ledger).Ingest(spans)
+	data, _ := CanonicalJSON(map[string]any{
+		"spans": spans, "reconciliation": result,
+	})
+	fmt.Fprintln(stdout, string(data))
 	return 0
 }

@@ -16,6 +16,7 @@ type ActOptions struct {
 	ExtraSigners  []Signer
 	StatusLookup  func(uri string, idx int) (int, error)
 	ExtraProfiles []Profile
+	Trace         *TraceContext
 }
 
 // Act validates an action, mints the receipt, and appends it to the ledger.
@@ -93,6 +94,15 @@ func Act(ledger *Ledger, chain []Delegation, action map[string]any,
 	}
 	if result.Outcome == "valid" {
 		decision["result"] = "allowed"
+	}
+	if opts.Trace != nil {
+		trace := *opts.Trace
+		trace.AuthorityHash = AuthorityHash(stringField(action, "action"),
+			chain[len(chain)-1].ID, "")
+		decision["trace_id"] = trace.TraceID
+		decision["span_id"] = trace.SpanID
+		decision["traceparent"] = trace.Traceparent()
+		decision["tracestate"] = trace.Tracestate()
 	}
 	fleet := opts.Fleet
 	if fleet == "" {

@@ -45,6 +45,7 @@ type MCPWrapperConfig struct {
 	StatusKeys  map[string]string
 	Approval    map[string]any
 	Ledger      *Ledger
+	Trace       *TraceContext
 }
 
 // MCPWrapper is the policy enforcement point for an MCP tool surface.
@@ -139,6 +140,7 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 		w.config.RootKeyPEM, ActOptions{
 			Fleet: w.config.Fleet, Signer: w.config.Signer,
 			Approval: w.config.Approval, StatusLookup: statusLookup,
+			Trace: w.config.Trace,
 		})
 	if err != nil {
 		return rpcError(id, -32000, "receipt failed: "+err.Error(), "")
