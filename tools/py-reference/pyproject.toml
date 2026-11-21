@@ -7,7 +7,7 @@ name = "agentid"
 version = "0.1.0"
 description = "Identity, guardrails, reliability and traceability for software agents — reference implementation"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "All rights reserved"}
 authors = [
   {name = "Rajat Srivastava", email = "super.agent.universe@gmail.com"},
 ]

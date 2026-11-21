@@ -237,4 +237,4 @@ Contributions and critique are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Attribution to the standards bodies whose documents this implements is in the docs.
+All rights reserved — see [LICENSE](LICENSE). No copying or commercial use without the owner's prior written permission. Attribution to the standards bodies whose documents this implements is in the docs.

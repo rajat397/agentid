@@ -1,26 +1,18 @@
-MIT License
+Copyright (c) 2026 Rajat Srivastava. All rights reserved.
 
-Copyright (c) 2026 Rajat Srivastava
+This repository, including its source code, documentation, configuration,
+generated artifacts and any derivative works, is the sole property of
+Rajat Srivastava.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+No person or entity is granted any right to copy, reproduce, modify, adapt,
+translate, distribute, publish, sublicense, sell, lease, or otherwise exploit
+this repository or any part of it, in source or compiled form, for any
+commercial purpose, without the prior express written permission of the
+copyright owner.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Evaluation, demonstration or testing is permitted only where expressly
+authorized in writing by the copyright owner. No license or right is granted
+by implication, estoppel, or otherwise. All rights not expressly granted are
+reserved.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-Note: the documents under docs/ that analyze third-party standards and
-specifications remain the intellectual property of their respective authors
-(NIST, IETF, WIMSE, OpenTelemetry). This license covers the software in this
-repository. Referenced standards are not relicensed by this file.
+Unauthorized copying or commercial use is prohibited.
