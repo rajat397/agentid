@@ -148,6 +148,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Approval workflow** — PEP-raised, reviewable approval requests with signed
+  artifacts bound to action digests. See
+  [reference/approval-workflow.md](docs/reference/approval-workflow.md).
 - **Intent compiler** — bounded NL patterns produce drafts; a human-signed
   compilation digest activates authority. See
   [reference/intent-compiler.md](docs/reference/intent-compiler.md).

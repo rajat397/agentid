@@ -7,7 +7,7 @@ import (
 var reservedEnvelopeKeys = map[string]bool{
 	"action": true, "system": true, "resource_type": true,
 	"resource_id": true, "nonce": true, "external_ref": true,
-	"stage": true,
+	"stage": true, "approval_request_id": true,
 }
 
 // Envelope is the canonical unit of approval, validation and receipt.

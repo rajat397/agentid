@@ -36,18 +36,19 @@ type ToolMapping struct {
 
 // MCPWrapperConfig supplies the evidence and policy inputs to the wrapper.
 type MCPWrapperConfig struct {
-	Tools          []ToolMapping
-	Chain          []Delegation
-	Profile        Profile
-	RootKeyPEM     []byte
-	Signer         Signer
-	Fleet          string
-	StatusToken    string
-	StatusKeys     map[string]string
-	Approval       map[string]any
-	Ledger         *Ledger
-	Trace          *TraceContext
-	PolicyProvider func() (Profile, error)
+	Tools            []ToolMapping
+	Chain            []Delegation
+	Profile          Profile
+	RootKeyPEM       []byte
+	Signer           Signer
+	Fleet            string
+	StatusToken      string
+	StatusKeys       map[string]string
+	Approval         map[string]any
+	Ledger           *Ledger
+	Trace            *TraceContext
+	PolicyProvider   func() (Profile, error)
+	ApprovalWorkflow *ApprovalWorkflow
 }
 
 // MCPWrapper is the policy enforcement point for an MCP tool surface.
@@ -146,19 +147,47 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 		}
 		policy = resolved
 	}
+	var approval map[string]any
+	if id := stringField(AsMap(params["arguments"]), "approval_request_id"); id != "" && w.config.ApprovalWorkflow != nil {
+		request, err := w.config.ApprovalWorkflow.Get(id)
+		if err != nil || request.Status != "approved" {
+			return rpcError(id, -32000, "approval request is not approved", "")
+		}
+		digest, _ := EnvelopeDigest(action)
+		if request.EnvelopeDigest != digest {
+			return rpcError(id, -32000, "approval does not bind this action", "")
+		}
+		approval = request.Approval
+	}
 	statusLookup := w.currentStatusLookup()
 	_, result, err := Act(w.ledger, w.config.Chain, action, policy,
 		w.config.RootKeyPEM, ActOptions{
 			Fleet: w.config.Fleet, Signer: w.config.Signer,
-			Approval: w.config.Approval, StatusLookup: statusLookup,
-			Trace: w.config.Trace,
+			Approval:     firstApproval(approval, w.config.Approval),
+			StatusLookup: statusLookup,
+			Trace:        w.config.Trace,
 		})
 	if err != nil {
 		return rpcError(id, -32000, "receipt failed: "+err.Error(), "")
 	}
 	receipt := w.ledger.Receipts[len(w.ledger.Receipts)-1]
 	if result.Outcome != "valid" {
-		return rpcError(id, -32000, "blocked: "+result.Reason, receipt.ID)
+		response := rpcError(id, -32000, "blocked: "+result.Reason, receipt.ID)
+		if w.config.ApprovalWorkflow != nil {
+			obligation := firstObligationType(result.Obligations)
+			if obligation != "" {
+				if digest, err := EnvelopeDigest(action); err == nil {
+					request, err := w.config.ApprovalWorkflow.Request(
+						stringField(action, "action"), stringField(action, "system"),
+						w.config.Chain[len(w.config.Chain)-1].ID, digest,
+						obligation, result.Reason)
+					if err == nil {
+						AsMap(AsMap(response["error"])["data"])["approval_request_id"] = request.ID
+					}
+				}
+			}
+		}
+		return response
 	}
 	credential := os.Getenv(mapping.CredentialEnv)
 	if credential == "" {
@@ -474,4 +503,22 @@ func (w *MCPWrapper) currentAuthToken() string {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return w.authToken
+}
+
+func firstApproval(candidates ...map[string]any) map[string]any {
+	for _, candidate := range candidates {
+		if candidate != nil {
+			return candidate
+		}
+	}
+	return nil
+}
+
+func firstObligationType(obligations []any) string {
+	for _, raw := range obligations {
+		if kind := stringField(AsMap(raw), "type"); kind != "" {
+			return kind
+		}
+	}
+	return ""
 }

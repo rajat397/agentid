@@ -51,6 +51,8 @@ type World struct {
 	cp              *agentid.ControlPlane
 	cache           *agentid.PolicyCache
 	intent          agentid.IntentCompilation
+	workflow        *agentid.ApprovalWorkflow
+	pendingWrapper  *agentid.MCPWrapper
 	anchorMgr       interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
@@ -173,11 +175,12 @@ func NewWorld(t *testing.T) *World {
 		Stage:        agentid.StageSideEffect, Provenance: agentid.ProvenanceTrusted,
 		DownstreamURL: ads.URL, CredentialEnv: "MOCK_ADS_CREDENTIAL",
 	}
+	workflow := agentid.NewApprovalWorkflow()
 	wrapper, err := agentid.NewMCPWrapper(agentid.MCPWrapperConfig{
 		Tools: []agentid.ToolMapping{mapping}, Chain: []agentid.Delegation{delegation},
 		Profile: profile, RootKeyPEM: publicPEM, Signer: signer,
 		Fleet: "integration", StatusToken: token, StatusKeys: signer.PublicKeys(),
-		Trace: &trace,
+		Trace: &trace, ApprovalWorkflow: workflow,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -216,7 +219,7 @@ func NewWorld(t *testing.T) *World {
 		mockTSAFail: &tsaFail, bucketDir: t.TempDir(), bucketSigner: signer,
 		retentionDir: t.TempDir(),
 		ledger:       worldLedger, ledgerPath: t.TempDir() + "/ledger.jsonl",
-		cp: cp, cache: cache, controlPlane: true,
+		cp: cp, cache: cache, controlPlane: true, workflow: workflow,
 	}
 }
 
@@ -647,4 +650,99 @@ func (w *World) ActivateIntentWithReview(candidate map[string]any) map[string]an
 		w.t.Fatal(err)
 	}
 	return w.callWithDelegation(active, w.rootPub, w.signer)
+}
+
+func (w *World) thresholdWrapper() *agentid.MCPWrapper {
+	w.t.Helper()
+	if w.pendingWrapper != nil {
+		return w.pendingWrapper
+	}
+	privatePEM, publicPEM, err := agentid.GenerateKeyPair()
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	signer, err := agentid.NewDevSigner(privatePEM, publicPEM, "threshold_key")
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	delegation, err := agentid.CreateDelegation(nil,
+		map[string]any{"type": "human", "id": "usr"}, "marketing-agent", map[string]any{
+			"permissions": []any{map[string]any{
+				"action": "ad.credit.purchase", "system": "meta-ads"}},
+			"max_amount":                    map[string]any{"value": "2000.00", "currency": "USD"},
+			"requires_human_approval_above": map[string]any{"value": "500.00", "currency": "USD"},
+		}, "2030-01-01T00:00:00Z",
+		agentid.DelegationOptions{Signer: signer, NoPQ: true})
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	w.t.Cleanup(server.Close)
+	w.t.Setenv("THRESHOLD_CREDENTIAL", "threshold-secret")
+	mapping := agentid.ToolMapping{
+		Name: "threshold.tool", Action: "ad.credit.purchase", System: "meta-ads",
+		ResourceType:  "ad_credit_account",
+		AllowedArgs:   []string{"amount", "currency", "approval_request_id"},
+		DownstreamURL: server.URL, CredentialEnv: "THRESHOLD_CREDENTIAL",
+	}
+	wrapper, err := agentid.NewMCPWrapper(agentid.MCPWrapperConfig{
+		Tools: []agentid.ToolMapping{mapping}, Chain: []agentid.Delegation{delegation},
+		Profile: w.profile, RootKeyPEM: publicPEM, Signer: signer,
+		ApprovalWorkflow: w.workflow,
+	})
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	w.pendingWrapper = wrapper
+	return wrapper
+}
+
+func (w *World) RequestOverThreshold() map[string]any {
+	w.t.Helper()
+	request, _ := agentid.DecodeJSON(agentid.MCPRequestJSON(1, "threshold.tool",
+		map[string]any{"amount": "1000.00", "currency": "USD"}))
+	return w.thresholdWrapper().HandleRPC(context.Background(), agentid.AsMap(request))
+}
+
+func (w *World) ReviewPending(approve bool) map[string]any {
+	w.t.Helper()
+	pending := w.workflow.List("pending")
+	if len(pending) == 0 {
+		w.t.Fatal("no pending approval request")
+	}
+	reviewer, reviewerPub, err := agentid.GenerateKeyPair()
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	signer, err := agentid.NewDevSigner(reviewer, reviewerPub, "reviewer_signer")
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	request, err := w.workflow.Review(pending[0].ID, approve, signer, "reviewed")
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	return request.ToMap()
+}
+
+func (w *World) RetryWithApproval(denied map[string]any) map[string]any {
+	w.t.Helper()
+	requestID := w.ApprovalRequestID(denied)
+	request, _ := agentid.DecodeJSON(agentid.MCPRequestJSON(2, "threshold.tool",
+		map[string]any{"amount": "1000.00", "currency": "USD",
+			"approval_request_id": requestID}))
+	return w.thresholdWrapper().HandleRPC(context.Background(), agentid.AsMap(request))
+}
+
+func (w *World) ApprovalRequestID(response map[string]any) string {
+	w.t.Helper()
+	errorObject := AsMapValue(response["error"])
+	return agentid.StringValue(AsMapValue(errorObject["data"])["approval_request_id"])
+}
+
+func (w *World) RequestStatus(record map[string]any) string {
+	w.t.Helper()
+	return agentid.StringValue(record["status"])
 }
