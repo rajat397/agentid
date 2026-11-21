@@ -3,288 +3,188 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>agentid — agents got permissions. Nobody asked who authorized them.</title>
-<meta name="description" content="A reference implementation of agent identity for the OTel/MCP era — scoped delegations, tamper-evident receipts, and decisions you can re-derive. Runnable, MIT-licensed." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🛡️</text></svg>" />
+<title>agentid — authority you can re-derive, not re-trust</title>
+<meta name="description" content="A Go reference implementation of agent identity: canonical action envelopes, a credential-holding PEP, deterministic validation, signed receipts, revocation, anchoring and evidence bundles you can verify offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%232DD4BF' d='M50 4 88 18v28c0 24-16 40-38 50C28 86 12 70 12 46V18z'/><path fill='%230A0E14' d='M44 62 28 46l7-7 9 9 21-21 7 7z'/></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/src/style.css?v=4">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/style.css?v=5">
 </head>
 <body>
 
 <header id="site-header">
   <div class="hbar">
     <a class="logo" href="#top">agent<em>id</em></a>
-    <nav>
-      <a href="#problem">The Problem</a>
-      <a href="#how">How it works</a>
-      <a href="#gate">Try it</a>
-      <a href="#receipt">The Receipt</a>
-      <a href="#demo">Run it</a>
+    <nav aria-label="Primary">
+      <a href="#system">The system</a>
+      <a href="#proof">Proof</a>
+      <a href="#gate">Try the gate</a>
+      <a href="#run">Run it</a>
       <a href="#evidence">Evidence</a>
     </nav>
     <a class="gh-btn" href="https://github.com/rajat397/agentid">GitHub ↗</a>
   </div>
 </header>
 
-<!-- ═══ HERO — the problem, the shape of the answer ═══ -->
+<!-- HERO -->
 <section class="hero-split" id="top">
   <div class="hero-copy">
-    <div class="eyebrow"><span class="dot"></span> Experimental · MIT · v0.1.0</div>
+    <div class="eyebrow"><span class="dot"></span> Go 1.27 · MIT · reference implementation</div>
     <h1>
       <span class="hline">An agent acted.</span>
-      <span class="hline"><span class="grad">Who said it could?</span></span>
+      <span class="hline"><span class="grad">Prove who authorized it.</span></span>
     </h1>
-    <p class="sub">Every AI agent system on earth issues tokens. Almost none can answer, after the fact, <em>which agent, under whose authority, and what exactly was authorized</em>. agentid makes the answer structural — not forensic.</p>
+    <p class="sub">Tokens answer <em>who</em>. agentid answers <em>which agent, on whose behalf, under which exact constraints — and produces evidence a third party can re-derive offline</em>. No vendor service in the verification path.</p>
     <div class="hero-ctas">
-      <a class="btn primary" href="#problem">See the problem →</a>
-      <a class="btn ghost" href="https://github.com/rajat397/agentid">Get the code</a>
+      <a class="btn primary" href="#proof">See the proof →</a>
+      <a class="btn ghost" href="#run">Run it locally</a>
+      <a class="btn ghost" href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">Standards matrix</a>
     </div>
     <div class="hero-meta mono">
-      <span><b>13</b> tests</span><span><b>1</b> dependency</span><span><b>0</b> services</span>
+      <span><b>142</b> tests</span><span><b>0</b> hosted services</span><span><b>7</b> predicate types</span><span><b>ES256 + ML-DSA-65</b></span>
     </div>
   </div>
 
-  <div class="hero-diagram" role="img" aria-label="A human signs a narrow, expiring delegation for an agent. The agent may re-delegate only narrower. The gate checks every call; outcomes are signed receipts.">
+  <div class="hero-diagram" role="img" aria-label="A human signs a narrow delegation; an enforcement point holds credentials and gates tool calls; a validator and control plane decide; receipts, status lists, anchors and telemetry become an evidence bundle.">
     <svg viewBox="0 0 520 560" class="chain-svg" aria-hidden="true">
       <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#46536B"/>
-        </marker>
-        <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#34D399"/>
-        </marker>
-        <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#F87171"/>
-        </marker>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#46536B"/></marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#34D399"/></marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#F87171"/></marker>
       </defs>
-
-      <!-- Human node -->
-      <g class="node node-human">
-        <rect x="160" y="8" width="200" height="56" rx="12"/>
-        <text x="260" y="33" class="n-title">Human</text>
-        <text x="260" y="51" class="n-sub mono">usr_8842 · root authority</text>
-      </g>
-
-      <!-- Edge: signs delegation -->
+      <g class="node node-human"><rect x="160" y="8" width="200" height="56" rx="12"/><text x="260" y="33" class="n-title">Principal</text><text x="260" y="51" class="n-sub mono">human · IdP · attested workload</text></g>
       <line x1="260" y1="64" x2="260" y2="128" class="edge" marker-end="url(#arrow)"/>
-      <text x="274" y="90" class="edge-label mono">signs</text>
-      <text x="274" y="105" class="edge-detail mono">ad.credit.purchase · meta-ads</text>
-      <text x="274" y="119" class="edge-detail mono">cap $2,000 · cosign &gt;$500 · 30m</text>
-
-      <!-- Agent node -->
-      <g class="node node-agent">
-        <rect x="150" y="132" width="220" height="56" rx="12"/>
-        <text x="260" y="157" class="n-title">Agent</text>
-        <text x="260" y="175" class="n-sub mono">marketing-agent · dlg_2f80…</text>
-      </g>
-
-      <!-- Edge: re-delegates narrower -->
+      <text x="274" y="90" class="edge-label mono">signs envelope</text>
+      <text x="274" y="105" class="edge-detail mono">action · system · typed predicates</text>
+      <text x="274" y="119" class="edge-detail mono">aud · stage · provenance · expiry</text>
+      <g class="node node-agent"><rect x="150" y="132" width="220" height="56" rx="12"/><text x="260" y="157" class="n-title">PEP / MCP wrapper</text><text x="260" y="175" class="n-sub mono">holds credentials · agent never does</text></g>
       <line x1="260" y1="188" x2="260" y2="252" class="edge" marker-end="url(#arrow)"/>
-      <text x="274" y="214" class="edge-label mono">re-delegates — narrower</text>
-      <text x="274" y="229" class="edge-detail mono">cap $800 · 5m · write-withheld</text>
-
-      <!-- Sub-agent node -->
-      <g class="node node-sub">
-        <rect x="150" y="256" width="220" height="56" rx="12"/>
-        <text x="260" y="281" class="n-title">Sub-agent</text>
-        <text x="260" y="299" class="n-sub mono">creative-writer · dlg_c3ca…</text>
-      </g>
-
-      <!-- Outcome chips -->
+      <text x="274" y="214" class="edge-label mono">validates locally</text>
+      <text x="274" y="229" class="edge-detail mono">deny-overrides · signed approvals</text>
+      <text x="274" y="243" class="edge-detail mono">revocation · control-plane cache</text>
+      <g class="node node-sub"><rect x="150" y="256" width="220" height="56" rx="12"/><text x="260" y="281" class="n-title">Validator + evidence</text><text x="260" y="299" class="n-sub mono">receipt · status · anchor · spans</text></g>
       <g class="outcome">
         <line x1="230" y1="312" x2="140" y2="368" class="edge edge-red" marker-end="url(#arrow-red)"/>
         <rect x="14" y="372" width="240" height="70" rx="10" class="chip chip-red"/>
-        <text x="26" y="397" class="chip-title red mono">✗ $4,500 → REJECTED</text>
-        <text x="26" y="416" class="chip-sub mono">exceeds $800 sub-cap</text>
-        <text x="26" y="433" class="chip-sub mono">receipt rcp_21aa… (denied)</text>
+        <text x="26" y="397" class="chip-title red mono">✗ DENIED</text>
+        <text x="26" y="416" class="chip-sub mono">constraint breach or stale policy</text>
+        <text x="26" y="433" class="chip-sub mono">receipt + approval request</text>
       </g>
       <g class="outcome">
         <line x1="290" y1="312" x2="380" y2="368" class="edge edge-green" marker-end="url(#arrow-green)"/>
         <rect x="266" y="372" width="240" height="70" rx="10" class="chip chip-green"/>
-        <text x="278" y="397" class="chip-title green mono">✓ $1,200 → ALLOWED</text>
-        <text x="278" y="416" class="chip-sub mono">under cap · approval on file</text>
-        <text x="278" y="433" class="chip-sub mono">receipt rcp_6579… (executed)</text>
+        <text x="278" y="397" class="chip-title green mono">✓ ALLOWED</text>
+        <text x="278" y="416" class="chip-sub mono">downstream call with held credential</text>
+        <text x="278" y="433" class="chip-sub mono">signed, hash-chained receipt</text>
       </g>
-
-      <!-- Invariant strip -->
-      <text x="260" y="492" class="invariant mono">permissions INTERSECT · caps DROP · budgets DRAW DOWN</text>
-      <text x="260" y="514" class="invariant-sub">a wider child grant is rejected at creation — before it can exist</text>
+      <text x="260" y="492" class="invariant mono">NO TTP IN VERIFICATION · RE-DERIVABLE FROM ARTIFACTS</text>
+      <text x="260" y="514" class="invariant-sub">the auditor needs the bundle and the public key — not our service</text>
     </svg>
   </div>
 </section>
 
-<!-- ═══ 01 — THE PROBLEM ═══ -->
-<section id="problem">
+<!-- SYSTEM -->
+<section id="system">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">01</span><h2>Three failures your tokens can't see</h2></div>
-    <p class="lead">Agent identity today is a badge — a token that says "this is the marketing agent." Badges don't carry <em>how far</em> an agent may go, <em>on whose behalf</em>, or <em>when the authority dies</em>. So these happen, silently:</p>
-
-    <div class="problem-grid">
-      <article class="fail-card">
-        <div class="fail-tag mono red">OVER-SPEND</div>
-        <h3>The invoice nobody approved</h3>
-        <p class="fail-today"><b>Today:</b> the marketing agent has meta-ads access. It makes a $4,500 purchase. The token was valid, so the ad ran. Finance finds it on the statement three weeks later.</p>
-        <p class="fail-fix"><b>With agentid:</b> the grant capped the action at $2,000. The call is rejected before it reaches the ad platform — and the denial itself is a signed receipt.</p>
-      </article>
-
-      <article class="fail-card">
-        <div class="fail-tag mono amber">OVER-READ</div>
-        <h3>The PII it never needed</h3>
-        <p class="fail-today"><b>Today:</b> the support agent can <em>read</em> the customer database — every record, every field — because that's what its role allows. It exports more than any single ticket required. Nobody notices.</p>
-        <p class="fail-fix"><b>With agentid:</b> the delegation names one action, one system, nothing else. Reading outside it isn't denied-with-a-log — it's undeniably out of scope, rejected at the gate.</p>
-      </article>
-
-      <article class="fail-card">
-        <div class="fail-tag mono blue">UNREVOCABLE</div>
-        <h3>Revoked, but not really</h3>
-        <p class="fail-today"><b>Today:</b> you offboard the contractor on Monday. Their agent's token lives until it expires on Friday. It keeps acting — for a user who no longer exists — until it dies of old age.</p>
-        <p class="fail-fix"><b>With agentid:</b> revoke the leaf delegation and the very next tool call is denied. No waiting for expiry, no rotation ceremony — and a receipt names the denial.</p>
-      </article>
+    <div class="sec-head"><span class="sec-num">01</span><h2>The system that actually ships</h2></div>
+    <p class="lead">Five working layers, all in a Go 1.27 standard-library core. Everything below has a test, a CLI path and a document in the repository.</p>
+    <div class="map-grid">
+      <article class="map-card"><div class="map-k mono">01 · ENVELOPE</div><h3>Canonical action</h3><p>A digest of <code>action, system, resource, attributes</code> is the unit of approval, validation and receipt. Seven typed predicates cover amounts, enumeration, windows, rolling sums, co-sign, equality and bounds.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/constraints.md">constraints →</a></article>
+      <article class="map-card"><div class="map-k mono">02 · PEP</div><h3>MCP wrapper holds the key</h3><p>The agent sees JSON-RPC tools, never credentials. Authority fields come from operator mapping, not tool arguments. Denials return <code>-32000</code> with a receipt id and an approval request when applicable.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/mcp-wrapper.md">wrapper →</a></article>
+      <article class="map-card"><div class="map-k mono">03 · DECISION</div><h3>Deterministic &amp; dual-signed</h3><p>Deny-overrides across profiles, implicit deny, canonical obligation union. Delegations and receipts carry ES256 primary plus ML-DSA-65 post-quantum signatures; approvals must be signed by the approver.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/policy-combining.md">combining →</a></article>
+      <article class="map-card"><div class="map-k mono">04 · EVIDENCE</div><h3>Bundle, anchors, telemetry</h3><p>Signed receipts, status lists, customer-chosen anchors, five OTel spans and signer keys travel in one offline-verifiable bundle. A mismatch metric corroborates telemetry against receipts.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/evidence-bundle.md">bundle →</a></article>
+      <article class="map-card"><div class="map-k mono">05 · OPERATIONS</div><h3>Lifecycle, not just issuance</h3><p>SCIM deprovisioning revokes in bounded time; erasure executors emit deletion receipts; retention archives before pruning; control-plane policy bundles fail closed when stale.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/control-plane.md">control plane →</a></article>
     </div>
   </div>
 </section>
 
-<!-- ═══ 02 — HOW IT WORKS ═══ -->
-<section id="how">
+<!-- AUDIENCE PATHS -->
+<section id="paths" class="paths-section">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">02</span><h2>Sign → gate → receipt</h2></div>
-    <p class="lead">Three moving parts. No service to deploy, no sidecar to babysit, no database — one dependency, one CLI.</p>
-
-    <div class="how-grid">
-      <article class="how-step">
-        <div class="how-num mono">1</div>
-        <h3>Sign a narrow grant</h3>
-        <p>A human signs a delegation naming the <em>one</em> action, the <em>one</em> system, a hard cap, an approval threshold, and a 30-minute expiry. Signed once — not "clicked Allow" forever.</p>
-        <pre class="how-chip mono">grant ad.credit.purchase · meta-ads
-     cap $2,000 · cosign &gt;$500 · 30m</pre>
-      </article>
-
-      <div class="how-arrow mono" aria-hidden="true">→</div>
-
-      <article class="how-step">
-        <div class="how-num mono">2</div>
-        <h3>Gate every call</h3>
-        <p>Enforcement lives at the point of action, not login. Every single tool call re-checks the delegation against the profile — cap, budget, threshold, revocation. Miss a check, the action doesn't exist.</p>
-        <pre class="how-chip mono">check(delegation, profile)
-  → valid | invalid | indeterminate</pre>
-      </article>
-
-      <div class="how-arrow mono" aria-hidden="true">→</div>
-
-      <article class="how-step">
-        <div class="how-num mono">3</div>
-        <h3>Keep the receipt</h3>
-        <p>Every outcome — executed or denied — is signed and hash-chained to the previous receipt. Later, anyone holding the inputs can re-derive the exact decision. Nothing to take on faith.</p>
-        <pre class="how-chip mono">receipt rcp_6579…
-  chain: ✓  profile: sha256:9f2c…</pre>
-      </article>
-    </div>
-
-    <div class="how-strip">
-      <span>Re-delegation only narrows — wider child grants are <b>rejected at creation</b></span>
-      <span>Budgets draw down across the chain</span>
-      <span>Revocation bites on the next call, in-flight</span>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Three ways in</h2></div>
+    <div class="path-grid">
+      <a class="path-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md"><span class="path-k mono">STANDARDS REVIEWER</span><h3>Claim → source → code</h3><p>Every NIST/IETF statement mapped to what is implemented and what is not, with the audit trail of our own corrections.</p><span class="path-arrow mono">read the matrix →</span></a>
+      <a class="path-card" href="#run"><span class="path-k mono">DEVELOPER</span><h3>Running code in five minutes</h3><p>Clone, <code>go test ./...</code>, run the CLI, inspect a real receipt. No cloud account, no SDK, no hosted service.</p><span class="path-arrow mono">run it →</span></a>
+      <a class="path-card" href="https://github.com/rajat397/agentid/blob/main/docs/PILOT-PROGRAM.md"><span class="path-k mono">OPERATOR / AUDITOR</span><h3>Threat model and pilot gates</h3><p>Ten threats, control mappings, executable mutants, and measurable success criteria for three design partners.</p><span class="path-arrow mono">read the pilot plan →</span></a>
     </div>
   </div>
 </section>
 
-<!-- ═══ 03 — TRY THE GATE ═══ -->
+<!-- PROOF -->
+<section id="proof">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Proof, not adjectives</h2></div>
+    <p class="lead">These blocks are generated from the actual Go CLI on every deploy. If the repo drifts, the page drifts with it — visible to anyone who reads the sync script.</p>
+    <div class="artifact-grid">
+      <article class="artifact"><div class="art-k mono">EVIDENCE BUNDLE</div><pre class="mini-term"><!-- EVIDENCE_CAPTURE_START -->
+evidence bundle VERIFIED (2 receipts, 1 delegations, 0 anchors, 1 status tokens)
+<!-- EVIDENCE_CAPTURE_END --></pre><p>Receipts, chains, profiles, anchors, status tokens and keys — verified offline.</p></article>
+      <article class="artifact"><div class="art-k mono">DUAL-SIGNATURE VERIFIER</div><pre class="mini-term"><!-- PQ_CAPTURE_START -->
+FULLY VERIFIED: [ES256 ES256 ML-DSA-65 ML-DSA-65]
+<!-- PQ_CAPTURE_END --></pre><p>ES256 primary and ML-DSA-65 additive signatures checked in one Go verifier.</p></article>
+      <article class="artifact"><div class="art-k mono">OTEL RECONCILIATION</div><pre class="mini-term"><!-- OTEL_CAPTURE_START -->
+five spans: delegation.issue, validation, obligation, downstream.call, receipt.persisted
+reconciliation: agentid.mismatch = 0
+propagation: W3C traceparent + agentid authority tracestate
+PII: subject refs pseudonymous by default
+<!-- OTEL_CAPTURE_END --></pre><p>Five spans per action, mutually bound to receipts; divergences raise <code>agentid.mismatch</code>.</p></article>
+      <article class="artifact"><div class="art-k mono">RIGHT TO ERASURE</div><pre class="mini-term"><!-- ERASURE_CAPTURE_START -->
+erasure plan — subject cust_4471
+receipts: 2 · delegations: 1
+deadline: 2026-12-21T19:59:35Z (30 days)
+systems: internal_crm (62 records), zendesk (4 records)
+<!-- ERASURE_CAPTURE_END --></pre><p>Opaque subject references enumerated from receipts; execution uses real connectors.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- GATE -->
 <section id="gate" class="gate-section">
   <div class="gate-grid">
     <div class="gate-copy">
-      <div class="sec-head"><span class="sec-num">03</span><h2>Try the gate</h2></div>
-      <p class="gate-lead">This ring is the whole enforcement mechanism. An amount arrives, the profile's rules decide, and the action <em>is or isn't allowed to exist</em>. Drag the slider — the agent doesn't argue with the gate.</p>
-
+      <div class="sec-head"><span class="sec-num">04</span><h2>Try the gate</h2></div>
+      <p class="lead">Move the sliders. The gate is the same decision function the CLI uses for amounts and co-sign approval — now also paired with typed attributes, stage ceilings and provenance in the full validator.</p>
       <div class="gate-controls">
-        <div class="ctl-row">
-          <label for="g-amount">Amount <output id="g-amount-out">$1,000.00</output></label>
-          <input type="range" id="g-amount" min="10" max="5000" step="10" value="1000">
-        </div>
-        <div class="ctl-row">
-          <label for="g-cap">Human-set hard cap <output id="g-cap-out">$2,000.00</output></label>
-          <input type="range" id="g-cap" min="100" max="5000" step="50" value="2000">
-        </div>
-        <div class="ctl-row">
-          <label for="g-threshold">Approval threshold <output id="g-threshold-out">$500.00</output></label>
-          <input type="range" id="g-threshold" min="0" max="5000" step="50" value="500">
-        </div>
-        <div class="approval-row">
-          <div>
-            <b>Human approval on file</b>
-            <span class="mono small">apr_01DEMO · valid · not revoked</span>
-          </div>
-          <button class="toggle" id="g-approval" role="switch" aria-checked="true" aria-label="approval on file"></button>
-        </div>
+        <div class="ctl-row"><label for="g-amount">REQUESTED AMOUNT <span id="g-amount-out" class="mono">$1,000.00</span></label><input type="range" id="g-amount" min="0" max="6000" step="100" value="1000" /></div>
+        <div class="ctl-row"><label for="g-cap">DELEGATED CAP <span id="g-cap-out" class="mono">$2,000.00</span></label><input type="range" id="g-cap" min="0" max="6000" step="100" value="2000" /></div>
+        <div class="ctl-row"><label for="g-threshold">CO-SIGN THRESHOLD <span id="g-threshold-out" class="mono">$500.00</span></label><input type="range" id="g-threshold" min="0" max="3000" step="100" value="500" /></div>
+        <div class="approval-row"><div><b>Human approval on file</b><span class="small">required above the co-sign threshold</span></div><button type="button" id="g-approval" class="toggle" role="switch" aria-checked="true"><span></span></button></div>
       </div>
-
-      <p class="gate-verdict">
-        <span class="gv-label mono">DECISION</span>
-        <span class="gv-value" id="gate-verdict">VALID</span>
-        <span class="gv-reason" id="gate-reason">within constraints — amount under cap, approval on file</span>
-      </p>
     </div>
-    <div class="gate-stage" id="gate-stage" aria-label="Aperture gate that narrows or admits the action">
-      <div class="gate-fallback" id="gate-fallback">
-        <div class="gf-ring" id="gf-ring"></div>
-        <div class="gf-caption mono" id="gf-caption">ALLOWED</div>
+    <div class="gate-visual">
+      <div class="gate-stage" id="gate-stage">
+        <div class="gate-fallback">
+          <div class="gf-ring" id="gf-ring"></div>
+          <div class="gf-caption mono" id="gf-caption">ALLOWED</div>
+        </div>
+        <button type="button" id="gate-3d-toggle" class="gate-3d-toggle">show in 3D →</button>
       </div>
-      <button class="gate-3d-toggle mono" id="gate-3d-toggle" type="button">show in 3D →</button>
+      <div class="gate-verdict"><span class="gv-label mono">VERDICT</span><span class="gv-value valid" id="gate-verdict">VALID</span><p class="gv-reason" id="gate-reason"></p></div>
     </div>
   </div>
 </section>
 
-<!-- ═══ 04 — THE RECEIPT ═══ -->
-<section id="receipt">
+<!-- RUN -->
+<section id="run">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">04</span><h2>The receipt answers the four questions</h2></div>
-    <p class="lead">Whatever incident you get paged for at 2 a.m. boils down to four questions. agentid produces the answers as a matter of course — because the answers were <em>the design constraint</em>, not a forensics project.</p>
-
-    <div class="four-q">
-      <div class="q-card"><span class="q-n mono">Q1</span><b>Which agent acted?</b><span class="mono q-a">spiffe://example.trust/agent/marketing-agent</span></div>
-      <div class="q-card"><span class="q-n mono">Q2</span><b>On whose behalf?</b><span class="mono q-a">oidc|acme-retail|usr_8842</span></div>
-      <div class="q-card"><span class="q-n mono">Q3</span><b>Under which credential?</b><span class="mono q-a">dlg-key-2026-11 · ES256</span></div>
-      <div class="q-card"><span class="q-n mono">Q4</span><b>Under whose approval?</b><span class="mono q-a">apr_01DEMO · cosign_above · $500</span></div>
-    </div>
-
-    <div class="receipt-grid">
-      <div class="receipt-copy">
-        <p class="lead">The outcome of any incident is a piece of paper. This implementation produces that paper as a matter of course — signed, chained, hash-verified, and re-derivable by anyone holding the inputs.</p>
-        <div class="receipt-props">
-          <div class="rp"><b>Signed</b><span>ES256 — tamper-evident by construction</span></div>
-          <div class="rp"><b>Chained</b><span>each receipt hash-links the previous; one altered receipt breaks the seal</span></div>
-          <div class="rp"><b>Content-addressed</b><span>every receipt names the exact validation profile that decided it</span></div>
-        </div>
-      </div>
-      <div class="receipt-card" aria-hidden="true">
-        <div class="rc-head"><span class="rc-brand mono">agentid</span><span class="rc-type mono">RECEIPT</span></div>
-        <div class="rc-row"><span>action</span><b>ad.credit.purchase</b></div>
-        <div class="rc-row"><span>system</span><b>meta-ads</b></div>
-        <div class="rc-row"><span>amount</span><b>$2,000.00</b></div>
-        <div class="rc-row"><span>agent</span><b>spiffe://…marketing-agent</b></div>
-        <div class="rc-row"><span>authority</span><b>usr_8842 · via dlg_c3ca…</b></div>
-        <div class="rc-row"><span>approval</span><b>apr_01DEMO · cosign_above</b></div>
-        <div class="rc-row"><span>outcome</span><b class="good">ALLOWED</b></div>
-        <div class="rc-hash mono">sha256:9f2c…e1a7 · chain verified ✓</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ 05 — RUN IT ═══ -->
-<section id="demo">
-  <div class="wrap">
-    <div class="sec-head"><span class="sec-num">05</span><h2>Run it. Watch it refuse.</h2></div>
-    <p class="lead">Every line below is what <code class="mono">agentid demo</code> printed on a clean clone. The script that produces this output is in the repository — you can re-derive it. <a href="https://github.com/rajat397/agentid/blob/main/scripts/sync-playground-captures.sh">See it here.</a></p>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Run it from a cold clone</h2></div>
+    <p class="lead">Go 1.27. Standard-library core. The same commands run in CI on every push.</p>
+    <pre class="quickstart mono">git clone https://github.com/rajat397/agentid.git
+cd agentid
+go test ./...
+go run ./cmd/agentid demo
+go run ./cmd/agentid evidence export --demo --out bundle.json
+go run ./cmd/agentid evidence verify --file bundle.json
+go run ./cmd/agentid verify-signed --artifact /path/to/cross-artifact.json</pre>
     <div class="terminal" id="terminal-wrap">
       <div class="terminal-bar"><span class="lights"><i></i><i></i><i></i></span><span class="terminal-title mono">agentid demo — real output, regenerated every deploy</span></div>
       <pre class="terminal-body" id="demo-capture"><!-- DEMO_CAPTURE_START -->
 agentid — the full lifecycle, running against real Go code
 
-1. Human grants authority: dlg_ce70f4a0a753a6cd (kid demo_signer)
-2. Over-cap action: invalid — /attributes/amount max predicate violated (observed 4500.00) (receipt rcp_7385a74ba2dfca77)
-3. Within authority: valid (receipt rcp_f942e2e15efdf741)
+1. Human grants authority: dlg_f6ef4f0534abf6c8 (kid demo_signer)
+2. Over-cap action: invalid — /attributes/amount max predicate violated (observed 4500.00) (receipt rcp_c33f51a402b1f25d)
+3. Within authority: valid (receipt rcp_eb2e01dff5539b53)
 4. Four questions: agent=spiffe://example.trust/agent/marketing-agent, subject=oidc|acme-retail|usr_8842, credential=demo_signer, approval=apr_01DEMO
 5. Tampered receipt: signatures + hash chain verify: false (receipt[0] signature invalid or kid unknown)
 <!-- DEMO_CAPTURE_END --></pre>
@@ -292,71 +192,22 @@ agentid — the full lifecycle, running against real Go code
   </div>
 </section>
 
-<!-- ═══ 06 — EVIDENCE / WHY NOW ═══ -->
+<!-- EVIDENCE -->
 <section id="evidence">
   <div class="wrap">
     <div class="sec-head"><span class="sec-num">06</span><h2>Don't re-trust — re-derive</h2></div>
-    <p class="lead">Every decision this implementation makes is reproducible by any party holding the inputs. That property — not the interface — is the entire point of agent identity.</p>
-
-    <div class="why-now">
-      <div class="ev-k mono">WHY NOW</div>
-      <p>NIST's <a href="https://www.nccoe.nist.gov/">NCCoE</a> published a concept paper in February 2026 to close exactly this gap — agent identity, authorization, and audit for U.S. federal and critical-infrastructure use. The comment summary drew 614 responses; SP 800-63-4 explicitly excludes agents, and NISTIR 8587 names the risk and punts. agentid is one runnable, public answer — read the <a href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">standards matrix</a> and check our mapping.</p>
-    </div>
-
+    <p class="lead">The decision, the evidence and the verification travel together. That is the entire point; the interface is incidental.</p>
+    <div class="why-now"><div class="ev-k mono">WHY NOW</div><p>NIST's <a href="https://www.nccoe.nist.gov/">NCCoE</a> concept paper (February 2026) frames agent identity, authorization and audit for federal and critical-infrastructure use. SP 800-63-4 explicitly excludes agents; NISTIR 8587 names the risk. agentid is one runnable public answer — check the <a href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">standards matrix</a> and the <a href="https://github.com/rajat397/agentid/blob/main/docs/security/threat-model.md">threat model</a>.</p></div>
     <div class="evidence-grid">
-      <a class="ev-card" href="https://github.com/rajat397/agentid">
-        <div class="ev-k mono">REPOSITORY</div>
-        <div class="ev-t">github.com/rajat397/agentid</div>
-        <div class="ev-d">MIT-licensed. Go 1.27 standard-library core. 142 tests, all passing. Read the threat model before you deploy anything.</div>
-        <div class="ev-arrow mono">→</div>
-      </a>
-      <a class="ev-card" href="https://rajat397.github.io/agentid/">
-        <div class="ev-k mono">THIS PAGE</div>
-        <div class="ev-t">rajat397.github.io/agentid</div>
-        <div class="ev-d">The playground is a static build of the actual code. No fake demos, no screenshots of a fictional product.</div>
-        <div class="ev-arrow mono">→</div>
-      </a>
-      <div class="ev-card static">
-        <div class="ev-k mono">ERASURE</div>
-        <div class="ev-t">Right to erasure, executable</div>
-        <div class="ev-d">agent-collected personal data enumerable from receipts alone — before any manual effort, inside one month by construction.</div>
-        <pre id="erasure-capture" class="mini-term"><!-- ERASURE_CAPTURE_START -->
-{
-  "created_at": "2026-11-21T19:28:39Z",
-  "days_remaining": 30,
-  "deadline": "2026-12-21T19:28:39Z",
-  "delegations": [
-    "dlg_acd63e35a38d8586"
-  ],
-  "derived_artifacts": [],
-  "downstream_systems": [
-    {
-      "deletion_method": "customer_connector",
-      "records": 62,
-      "system": "internal_crm"
-    },
-    {
-      "deletion_method": "customer_connector",
-      "records": 4,
-      "system": "zendesk"
-    }
-  ],
-  "subject_id": "cust_4471",
-  "total_receipts": 2
-}
-<!-- ERASURE_CAPTURE_END --></pre>
-      </div>
+      <a class="ev-card" href="https://github.com/rajat397/agentid"><div class="ev-k mono">REPOSITORY</div><div class="ev-t">github.com/rajat397/agentid</div><div class="ev-d">MIT. Go 1.27 standard-library core. 142 tests, race-clean, fuzzed parsers. Read the hardening report before you deploy anything.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/HARDENING-REPORT.md"><div class="ev-k mono">HONEST LIMITS</div><div class="ev-t">Hardening report</div><div class="ev-d">68.5% measured coverage; CMS chain verification and second-language PQ verification stated as unresolved, not hidden.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/PILOT-PROGRAM.md"><div class="ev-k mono">PILOTS</div><div class="ev-t">Three design partners</div><div class="ev-d">Ten measurable gates, including no-TTP verification and bounded SCIM revocation. Execution pending operator outreach.</div><div class="ev-arrow mono">→</div></a>
+      <div class="ev-card static"><div class="ev-k mono">THIS PAGE</div><div class="ev-t">Static build of real commands</div><div class="ev-d">Every captured block is regenerated from the Go CLI on deploy. No mock output, no fictional screenshots.</div></div>
     </div>
   </div>
 </section>
 
-<footer>
-  <div class="wrap foot">
-    <span>agentid v0.1.0 · MIT · Rajat Srivastava</span>
-    <span>Experimental reference implementation — not for production use. <a href="https://github.com/rajat397/agentid">GitHub</a></span>
-  </div>
-</footer>
-
+<footer class="site-footer"><div class="wrap mono">agentid · authority you can re-derive · MIT · <a href="https://github.com/rajat397/agentid">source</a></div></footer>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

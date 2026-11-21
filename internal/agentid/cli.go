@@ -49,7 +49,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	case "otel-serve":
 		return cmdOTelServe(args[1:], stdout, stderr)
 	case "otel-demo":
-		return cmdOTelDemo(stdout, stderr)
+		return cmdOTelDemo(args[1:], stdout, stderr)
 	case "verify-signed":
 		return cmdVerifySigned(args[1:], stdout, stderr)
 	default:
@@ -967,7 +967,13 @@ func cmdOTelServe(args []string, stdout, stderr io.Writer) int {
 	return serveError(http.ListenAndServe(addr, NewCollector(ledger).Handler()))
 }
 
-func cmdOTelDemo(stdout, stderr io.Writer) int {
+func cmdOTelDemo(args []string, stdout, stderr io.Writer) int {
+	summary := false
+	for _, arg := range args {
+		if arg == "--summary" {
+			summary = true
+		}
+	}
 	bundle, err := buildDemoLedger()
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -980,6 +986,17 @@ func cmdOTelDemo(stdout, stderr io.Writer) int {
 	}
 	spans := BuildEvidenceSpans(receipt, bundle.delegation, trace, false)
 	result := NewCollector(bundle.ledger).Ingest(spans)
+	if summary {
+		kinds := []string{}
+		for _, span := range spans {
+			kinds = append(kinds, stringField(span, "kind"))
+		}
+		fmt.Fprintf(stdout, "five spans: %s\n", strings.Join(kinds, ", "))
+		fmt.Fprintf(stdout, "reconciliation: agentid.mismatch = %v\n", result["count"])
+		fmt.Fprintln(stdout, "propagation: W3C traceparent + agentid authority tracestate")
+		fmt.Fprintln(stdout, "PII: subject refs pseudonymous by default")
+		return 0
+	}
 	data, _ := CanonicalJSON(map[string]any{
 		"spans": spans, "reconciliation": result,
 	})

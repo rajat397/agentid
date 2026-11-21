@@ -1,29 +1,54 @@
 #!/usr/bin/env bash
-# Regenerate the real-CLI-output sections of the playground from the Go CLI.
+# Regenerate every real-CLI artifact shown on the playground.
 # Run from repo root: bash scripts/sync-playground-captures.sh
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO"
 GO_BIN="${GO:-go}"
 SUBJECT="${ERASURE_SUBJECT:-cust_4471}"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
 
 escape() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 
 demo_html="$("$GO_BIN" run ./cmd/agentid demo 2>/dev/null | escape)"
-erasure_html="$("$GO_BIN" run ./cmd/agentid erasure "$SUBJECT" --demo 2>/dev/null | escape)"
+"$GO_BIN" run ./cmd/agentid evidence export --demo --out "$TMP/bundle.json" >/dev/null 2>&1
+evidence_html="$("$GO_BIN" run ./cmd/agentid evidence verify --file "$TMP/bundle.json" 2>/dev/null | escape)"
+"$GO_BIN" run ./tools/crosstest > "$TMP/cross.json" 2>/dev/null
+pq_html="$("$GO_BIN" run ./cmd/agentid verify-signed --artifact "$TMP/cross.json" 2>/dev/null | escape)"
+otel_html="$("$GO_BIN" run ./cmd/agentid otel-demo --summary 2>/dev/null | escape)"
+"$GO_BIN" run ./cmd/agentid erasure "$SUBJECT" --demo > "$TMP/erasure.json" 2>/dev/null
+erasure_text="$(python3 - "$TMP/erasure.json" <<'PYEOF'
+import json, sys
+plan = json.load(open(sys.argv[1], encoding="utf-8"))
+systems = ", ".join(
+    f"{row['system']} ({row['records']} records)"
+    for row in plan.get("downstream_systems", [])
+) or "none"
+print(f"erasure plan — subject {plan['subject_id']}")
+print(f"receipts: {plan['total_receipts']} · delegations: {len(plan['delegations'])}")
+print(f"deadline: {plan['deadline']} ({plan['days_remaining']} days)")
+print(f"systems: {systems}")
+PYEOF
+)"
+erasure_html="$(printf '%s
+' "$erasure_text" | escape)"
 
-python3 - "$REPO/playground/index.html" "$demo_html" "$erasure_html" <<'PYEOF'
+python3 - "$REPO/playground/index.html" "$demo_html" "$evidence_html" "$pq_html" "$otel_html" "$erasure_html" <<'PYEOF'
 import sys, re
-path, demo, erasure = sys.argv[1], sys.argv[2], sys.argv[3]
+path, demo, evidence, pq, otel, erasure = sys.argv[1:7]
 s = open(path, encoding="utf-8").read()
-s = re.sub(
-    r"(<!-- DEMO_CAPTURE_START -->).*?(<!-- DEMO_CAPTURE_END -->)",
-    lambda m: m.group(1) + "\n" + demo + "\n" + m.group(2),
-    s, flags=re.S)
-s = re.sub(
-    r"(<!-- ERASURE_CAPTURE_START -->).*?(<!-- ERASURE_CAPTURE_END -->)",
-    lambda m: m.group(1) + "\n" + erasure + "\n" + m.group(2),
-    s, flags=re.S)
+markers = {
+    "DEMO_CAPTURE": demo,
+    "EVIDENCE_CAPTURE": evidence,
+    "PQ_CAPTURE": pq,
+    "OTEL_CAPTURE": otel,
+    "ERASURE_CAPTURE": erasure,
+}
+for name, body in markers.items():
+    pattern = rf"(<!-- {name}_START -->).*?(<!-- {name}_END -->)"
+    s = re.sub(pattern, lambda m: m.group(1) + "\n" + body + "\n" + m.group(2),
+               s, flags=re.S)
 open(path, "w", encoding="utf-8").write(s)
 print("captures synced into", path)
 PYEOF
