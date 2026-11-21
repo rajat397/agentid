@@ -52,6 +52,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdOTelDemo(args[1:], stdout, stderr)
 	case "verify-signed":
 		return cmdVerifySigned(args[1:], stdout, stderr)
+	case "flow-demo":
+		return cmdFlowDemo(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -1022,5 +1024,27 @@ func cmdVerifySigned(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	fmt.Fprintf(stdout, "FULLY VERIFIED: %v\n", algorithms)
+	return 0
+}
+
+func cmdFlowDemo(args []string, stdout, stderr io.Writer) int {
+	mode := "allow"
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--mode" && i+1 < len(args) {
+			i++
+			mode = args[i]
+		}
+	}
+	if mode != "allow" && mode != "deny" {
+		fmt.Fprintln(stderr, "flow-demo --mode must be allow or deny")
+		return 2
+	}
+	trace, err := FlowDemoTrace(mode)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	data, _ := json.Marshal(trace)
+	fmt.Fprintln(stdout, string(data))
 	return 0
 }

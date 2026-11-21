@@ -34,9 +34,12 @@ PYEOF
 erasure_html="$(printf '%s
 ' "$erasure_text" | escape)"
 
-python3 - "$REPO/playground/index.html" "$demo_html" "$evidence_html" "$pq_html" "$otel_html" "$erasure_html" <<'PYEOF'
+flow_allow="$("$GO_BIN" run ./cmd/agentid flow-demo --mode allow 2>/dev/null)"
+flow_deny="$("$GO_BIN" run ./cmd/agentid flow-demo --mode deny 2>/dev/null)"
+
+python3 - "$REPO/playground/index.html" "$demo_html" "$evidence_html" "$pq_html" "$otel_html" "$erasure_html" "$flow_allow" "$flow_deny" <<'PYEOF'
 import sys, re
-path, demo, evidence, pq, otel, erasure = sys.argv[1:7]
+path, demo, evidence, pq, otel, erasure, flow_allow, flow_deny = sys.argv[1:9]
 s = open(path, encoding="utf-8").read()
 markers = {
     "DEMO_CAPTURE": demo,
@@ -44,6 +47,8 @@ markers = {
     "PQ_CAPTURE": pq,
     "OTEL_CAPTURE": otel,
     "ERASURE_CAPTURE": erasure,
+    "FLOW_ALLOW_DATA": flow_allow,
+    "FLOW_DENY_DATA": flow_deny,
 }
 for name, body in markers.items():
     pattern = rf"(<!-- {name}_START -->).*?(<!-- {name}_END -->)"

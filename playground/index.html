@@ -19,7 +19,7 @@
     <nav aria-label="Primary">
       <a href="#system">The system</a>
       <a href="#proof">Proof</a>
-      <a href="#gate">Try the gate</a>
+      <a href="#flow">Follow a flow</a>
       <a href="#run">Run it</a>
       <a href="#evidence">Evidence</a>
     </nav>
@@ -132,7 +132,7 @@ PII: subject refs pseudonymous by default
       <article class="artifact"><div class="art-k mono">RIGHT TO ERASURE</div><pre class="mini-term"><!-- ERASURE_CAPTURE_START -->
 erasure plan — subject cust_4471
 receipts: 2 · delegations: 1
-deadline: 2026-12-21T19:59:35Z (30 days)
+deadline: 2026-12-21T20:24:50Z (30 days)
 systems: internal_crm (62 records), zendesk (4 records)
 <!-- ERASURE_CAPTURE_END --></pre><p>Opaque subject references enumerated from receipts; execution uses real connectors.</p></article>
     </div>
@@ -140,32 +140,34 @@ systems: internal_crm (62 records), zendesk (4 records)
 </section>
 
 <!-- GATE -->
-<section id="gate" class="gate-section">
-  <div class="gate-grid">
-    <div class="gate-copy">
-      <div class="sec-head"><span class="sec-num">04</span><h2>Try the gate</h2></div>
-      <p class="lead">Move the sliders. The gate is the same decision function the CLI uses for amounts and co-sign approval — now also paired with typed attributes, stage ceilings and provenance in the full validator.</p>
-      <div class="gate-controls">
-        <div class="ctl-row"><label for="g-amount">REQUESTED AMOUNT <span id="g-amount-out" class="mono">$1,000.00</span></label><input type="range" id="g-amount" min="0" max="6000" step="100" value="1000" /></div>
-        <div class="ctl-row"><label for="g-cap">DELEGATED CAP <span id="g-cap-out" class="mono">$2,000.00</span></label><input type="range" id="g-cap" min="0" max="6000" step="100" value="2000" /></div>
-        <div class="ctl-row"><label for="g-threshold">CO-SIGN THRESHOLD <span id="g-threshold-out" class="mono">$500.00</span></label><input type="range" id="g-threshold" min="0" max="3000" step="100" value="500" /></div>
-        <div class="approval-row"><div><b>Human approval on file</b><span class="small">required above the co-sign threshold</span></div><button type="button" id="g-approval" class="toggle" role="switch" aria-checked="true"><span></span></button></div>
-      </div>
+<section id="flow" class="flow-section">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Follow one action, end to end</h2></div>
+    <p class="lead">Click a scenario. Every step below is generated from a real Go run at deploy time — envelope digest, validator decision, downstream response, receipt and spans. This is how agentid sits inside an agent's tool path.</p>
+    <div class="flow-controls" role="group" aria-label="Choose a scenario">
+      <button type="button" class="flow-btn active" data-flow="allow">Run an allowed action</button>
+      <button type="button" class="flow-btn" data-flow="deny">Run a blocked action</button>
     </div>
-    <div class="gate-visual">
-      <div class="gate-stage" id="gate-stage">
-        <div class="gate-fallback">
-          <div class="gf-ring" id="gf-ring"></div>
-          <div class="gf-caption mono" id="gf-caption">ALLOWED</div>
-        </div>
-        <button type="button" id="gate-3d-toggle" class="gate-3d-toggle">show in 3D →</button>
-      </div>
-      <div class="gate-verdict"><span class="gv-label mono">VERDICT</span><span class="gv-value valid" id="gate-verdict">VALID</span><p class="gv-reason" id="gate-reason"></p></div>
+    <div class="flow-stage">
+      <div class="sequence" id="flow-sequence" aria-label="End-to-end action sequence"></div>
+      <aside class="flow-detail" aria-live="polite">
+        <div class="fd-outcome mono" id="flow-outcome">ALLOWED</div>
+        <div class="fd-kicker mono" id="flow-actor">AGENT</div>
+        <h3 id="flow-step-title">tools/call</h3>
+        <p id="flow-step-detail">Choose a scenario to follow an action.</p>
+        <pre class="fd-artifact mono" id="flow-step-artifact"></pre>
+      </aside>
     </div>
   </div>
 </section>
 
-<!-- RUN -->
+<script type="application/json" id="flow-allow-data"><!-- FLOW_ALLOW_DATA_START -->
+{"mode":"allow","outcome":"ALLOWED","steps":[{"id":"call","actor":"Agent","title":"tools/call","detail":"An agent asks for a consequential action. It has no downstream credential.","artifact":"{\"arguments\":{\"amount\":\"1000.00\",\"currency\":\"USD\"},\"method\":\"tools/call\",\"tool\":\"purchase_ad_credit\"}"},{"id":"envelope","actor":"PEP wrapper","title":"Canonical action envelope","detail":"The wrapper — not the agent — supplies system, stage, provenance and sensitivity. Digest is the unit of approval.","artifact":"{\"digest\":\"7a8c7728e31578f60b0a147f12e446f0b34aab6a13feb0e165cdf61d8f320ae5\",\"envelope\":{\"action\":\"ad.credit.purchase\",\"attributes\":{\"amount\":\"1000.00\",\"currency\":\"USD\",\"provenance\":\"trusted\",\"region\":\"eu\"},\"nonce\":null,\"resource\":{\"id\":\"acme_retail_meta\",\"type\":\"ad_credit_account\"},\"stage\":\"side_effect\",\"system\":\"meta-ads\"}}"},{"id":"decision","actor":"Validator","title":"Deterministic decision","detail":"Signed delegation, typed predicates, status list and signed policy are checked locally. Failed calls still mint receipts.","artifact":"{\"outcome\":\"valid\",\"profile_digest\":\"5Xc0m52vUEyGu5NNrydEsRrXIMbfy4TwYNiAvxFLqcM\",\"reason\":\"within constraints\",\"receipt_id\":\"rcp_dabea742b31c46ea\",\"trace_id\":\"c956840ad64ab1d90a3c8ba3e695a119\"}"},{"id":"downstream","actor":"Reference tool","title":"meta-ads (mock)","detail":"HTTP 200 — {\"order_id\":\"mock_order_1\",\"status\":\"accepted\"}","artifact":"{\"credential_location\":\"PEP wrapper (env)\",\"response\":\"HTTP 200 — {\\\"order_id\\\":\\\"mock_order_1\\\",\\\"status\\\":\\\"accepted\\\"}\"}"},{"id":"evidence","actor":"Evidence plane","title":"Receipt + spans + approval","detail":"Signed receipt, five mutually-bound spans, status token and evidence bundle are verifiable offline.","artifact":"{\"approval_request_id\":\"\",\"obligations\":[{\"approval_id\":\"apr_flow\",\"observed\":\"1000.00\",\"path\":\"/attributes/amount\",\"status\":\"discharged\",\"type\":\"cosign_above\",\"value\":\"500.00\"}],\"receipt_id\":\"rcp_dabea742b31c46ea\",\"span_kinds\":[\"delegation.issue\",\"validation\",\"obligation\",\"downstream.call\",\"receipt.persisted\"]}"}]}
+<!-- FLOW_ALLOW_DATA_END --></script>
+<script type="application/json" id="flow-deny-data"><!-- FLOW_DENY_DATA_START -->
+{"mode":"deny","outcome":"BLOCKED","steps":[{"id":"call","actor":"Agent","title":"tools/call","detail":"An agent asks for a consequential action. It has no downstream credential.","artifact":"{\"arguments\":{\"amount\":\"5000.00\",\"currency\":\"USD\"},\"method\":\"tools/call\",\"tool\":\"purchase_ad_credit\"}"},{"id":"envelope","actor":"PEP wrapper","title":"Canonical action envelope","detail":"The wrapper — not the agent — supplies system, stage, provenance and sensitivity. Digest is the unit of approval.","artifact":"{\"digest\":\"05881d3feb3b24caff2a2411e9cdfd35e4adc8339fa7a6bb9cab117f2f1f62bc\",\"envelope\":{\"action\":\"ad.credit.purchase\",\"attributes\":{\"amount\":\"5000.00\",\"currency\":\"USD\",\"provenance\":\"trusted\",\"region\":\"eu\"},\"nonce\":null,\"resource\":{\"id\":\"acme_retail_meta\",\"type\":\"ad_credit_account\"},\"stage\":\"side_effect\",\"system\":\"meta-ads\"}}"},{"id":"decision","actor":"Validator","title":"Deterministic decision","detail":"Signed delegation, typed predicates, status list and signed policy are checked locally. Failed calls still mint receipts.","artifact":"{\"outcome\":\"invalid\",\"profile_digest\":\"5Xc0m52vUEyGu5NNrydEsRrXIMbfy4TwYNiAvxFLqcM\",\"reason\":\"/attributes/amount max predicate violated (observed 5000.00)\",\"receipt_id\":\"rcp_275f93bc4a75985f\",\"trace_id\":\"2a2cd441e666109e52957ca292d24888\"}"},{"id":"downstream","actor":"Reference tool","title":"meta-ads (mock)","detail":"not called — no allowed receipt","artifact":"{\"credential_location\":\"PEP wrapper (env)\",\"response\":\"not called — no allowed receipt\"}"},{"id":"evidence","actor":"Evidence plane","title":"Receipt + spans + approval","detail":"Signed receipt, five mutually-bound spans, status token and evidence bundle are verifiable offline.","artifact":"{\"approval_request_id\":\"\",\"obligations\":null,\"receipt_id\":\"rcp_275f93bc4a75985f\",\"span_kinds\":[\"delegation.issue\",\"validation\",\"obligation\",\"downstream.call\",\"receipt.persisted\"]}"}]}
+<!-- FLOW_DENY_DATA_END --></script>
+
 <section id="run">
   <div class="wrap">
     <div class="sec-head"><span class="sec-num">05</span><h2>Run it from a cold clone</h2></div>
@@ -182,9 +184,9 @@ go run ./cmd/agentid verify-signed --artifact /path/to/cross-artifact.json</pre>
       <pre class="terminal-body" id="demo-capture"><!-- DEMO_CAPTURE_START -->
 agentid — the full lifecycle, running against real Go code
 
-1. Human grants authority: dlg_f6ef4f0534abf6c8 (kid demo_signer)
-2. Over-cap action: invalid — /attributes/amount max predicate violated (observed 4500.00) (receipt rcp_c33f51a402b1f25d)
-3. Within authority: valid (receipt rcp_eb2e01dff5539b53)
+1. Human grants authority: dlg_71aa3055d02a32d0 (kid demo_signer)
+2. Over-cap action: invalid — /attributes/amount max predicate violated (observed 4500.00) (receipt rcp_fe2d853fbd063fbf)
+3. Within authority: valid (receipt rcp_102bdc097997abf6)
 4. Four questions: agent=spiffe://example.trust/agent/marketing-agent, subject=oidc|acme-retail|usr_8842, credential=demo_signer, approval=apr_01DEMO
 5. Tampered receipt: signatures + hash chain verify: false (receipt[0] signature invalid or kid unknown)
 <!-- DEMO_CAPTURE_END --></pre>
