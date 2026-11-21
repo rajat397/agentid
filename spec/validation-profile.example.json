@@ -12,6 +12,7 @@
   "require_signed_approvals": true,
   "stage_allowlist": [],
   "combining": "deny-overrides",
+  "type_profile": null,
   "status_values": {
     "0x02": "suspended"
   }

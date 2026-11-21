@@ -308,7 +308,19 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 		"nonce":      envelope.Nonce,
 		"time":       nowISO,
 	}
+	typeProfile, err := TypeProfileFromMap(profile.TypeProfile)
+	if err != nil {
+		return ValidationResult{Outcome: "invalid", Reason: "type profile invalid: " + err.Error(),
+			ConstraintsEvaluated: evaluated}
+	}
 	for _, atom := range atoms {
+		observedValue, resolveErr := Resolve(view, atom.Path)
+		if resolveErr == nil {
+			if typeErr := typeProfile.Validate(atom.Path, observedValue, atom.Type); typeErr != nil {
+				return ValidationResult{Outcome: "invalid", Reason: typeErr.Error(),
+					ConstraintsEvaluated: evaluated}
+			}
+		}
 		switch atom.Type {
 		case "sum_max":
 			observed, err := toDecimalValue(Resolve(view, atom.Path))

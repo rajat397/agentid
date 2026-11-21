@@ -21,6 +21,7 @@ type Profile struct {
 	RequireSignedApprovals   bool
 	StageAllowlist           []string
 	Combining                string
+	TypeProfile              map[string]any
 }
 
 func (p Profile) document() map[string]any {
@@ -39,6 +40,7 @@ func (p Profile) document() map[string]any {
 		"require_signed_approvals":   p.RequireSignedApprovals,
 		"stage_allowlist":            p.StageAllowlist,
 		"combining":                  p.Combining,
+		"type_profile":               p.TypeProfile,
 	}
 }
 
@@ -75,6 +77,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 	if rawStatus, ok := raw["status_values"].(map[string]any); ok {
 		status = rawStatus
 	}
+	typeProfile := AsMap(raw["type_profile"])
 	stageAllowlist := stringList(raw["stage_allowlist"])
 	combining := stringField(raw, "combining")
 	if combining == "" {
@@ -114,6 +117,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		RequireSignedApprovals:   requireSignedApprovals,
 		StageAllowlist:           stageAllowlist,
 		Combining:                combining,
+		TypeProfile:              typeProfile,
 	}, nil
 }
 

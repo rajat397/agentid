@@ -514,3 +514,59 @@ func (w *World) RefreshPEP() {
 		w.t.Fatal(err)
 	}
 }
+
+func (w *World) TypedCall(args map[string]any, typeProfile map[string]any) map[string]any {
+	w.t.Helper()
+	privatePEM, publicPEM, err := agentid.GenerateKeyPair()
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	signer, err := agentid.NewDevSigner(privatePEM, publicPEM, "typed_key")
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	constraints := map[string]any{
+		"permissions": []any{map[string]any{"action": "typed.action", "system": "typed"}},
+	}
+	if _, ok := args["rows"]; ok {
+		constraints["predicates"] = []any{map[string]any{
+			"type": "max", "path": "/attributes/rows", "value": "100",
+		}}
+	}
+	if _, ok := args["priority"]; ok {
+		constraints["predicates"] = []any{map[string]any{
+			"type": "in", "path": "/attributes/priority", "values": []any{"low", "high"},
+		}}
+	}
+	delegation, err := agentid.CreateDelegation(nil,
+		map[string]any{"type": "human", "id": "usr"}, "typed-agent", constraints,
+		"2030-01-01T00:00:00Z", agentid.DelegationOptions{Signer: signer, NoPQ: true})
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	document := agentid.ExampleProfile().Document()
+	document["type_profile"] = typeProfile
+	profile, err := agentid.ProfileFromMap(document)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	w.t.Cleanup(server.Close)
+	w.t.Setenv("TYPED_CREDENTIAL", "typed-secret")
+	mapping := agentid.ToolMapping{
+		Name: "typed.tool", Action: "typed.action", System: "typed",
+		AllowedArgs:   []string{"rows", "priority"},
+		DownstreamURL: server.URL, CredentialEnv: "TYPED_CREDENTIAL",
+	}
+	wrapper, err := agentid.NewMCPWrapper(agentid.MCPWrapperConfig{
+		Tools: []agentid.ToolMapping{mapping}, Chain: []agentid.Delegation{delegation},
+		Profile: profile, RootKeyPEM: publicPEM, Signer: signer,
+	})
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	request, _ := agentid.DecodeJSON(agentid.MCPRequestJSON(1, "typed.tool", args))
+	return wrapper.HandleRPC(context.Background(), agentid.AsMap(request))
+}
