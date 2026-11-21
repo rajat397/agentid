@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func mcpTestWrapper(t *testing.T, statusToken string, statusKeys map[string]string,
@@ -121,8 +122,9 @@ func TestMCPWrapperDeniesWithReceiptAndNoDownstreamCall(t *testing.T) {
 
 func TestMCPWrapperHonorsStatusRevocation(t *testing.T) {
 	signer, pub := newSigner(t, "mcp_status_signer")
+	now := int(time.Now().Unix())
 	token, err := BuildStatusToken("https://example.invalid/status", []int{0x01},
-		signer, 1800000000, 1800000600, 300)
+		signer, now, now+600, 300)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,14 +150,49 @@ func TestMCPWrapperUnknownTool(t *testing.T) {
 
 func TestMCPHandlerMountsWrapper(t *testing.T) {
 	wrapper, _, _ := mcpTestWrapper(t, "", nil, nil)
+	wrapper.SetAuthToken("mcp-secret")
 	handler := NewMCPHandler(wrapper)
 	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder,
-		httptest.NewRequest(http.MethodPost, "/mcp",
-			strings.NewReader(string(MCPRequestJSON(5, "purchase_ad_credit", map[string]any{
-				"amount": "100.00", "currency": "USD", "account": "acct_1",
-			})))))
+	request := httptest.NewRequest(http.MethodPost, "/mcp",
+		strings.NewReader(string(MCPRequestJSON(5, "purchase_ad_credit", map[string]any{
+			"amount": "100.00", "currency": "USD", "account": "acct_1",
+		}))))
+	request.Header.Set("Authorization", "Bearer mcp-secret")
+	handler.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK || !strings.Contains(recorder.Body.String(), "receipt_id") {
 		t.Fatalf("MCP handler failed: %d %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestMCPHandlerRequiresBearerToken(t *testing.T) {
+	wrapper, _, _ := mcpTestWrapper(t, "", nil, nil)
+	wrapper.SetAuthToken("mcp-secret")
+	handler := NewMCPHandler(wrapper)
+	body := string(MCPRequestJSON(9, "tools/list", map[string]any{}))
+
+	unauthorized := httptest.NewRecorder()
+	handler.ServeHTTP(unauthorized,
+		httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body)))
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated MCP call allowed: %d", unauthorized.Code)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	request.Header.Set("Authorization", "Bearer mcp-secret")
+	authorized := httptest.NewRecorder()
+	handler.ServeHTTP(authorized, request)
+	if authorized.Code != http.StatusOK {
+		t.Fatalf("authorized MCP call rejected: %d", authorized.Code)
+	}
+}
+
+func TestMCPHandlerFailsClosedWithoutAuthConfig(t *testing.T) {
+	wrapper, _, _ := mcpTestWrapper(t, "", nil, nil)
+	handler := NewMCPHandler(wrapper)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/mcp",
+		strings.NewReader(string(MCPRequestJSON(10, "tools/list", map[string]any{})))))
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("unconfigured auth did not fail closed: %d", recorder.Code)
 	}
 }

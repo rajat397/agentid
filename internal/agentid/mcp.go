@@ -3,6 +3,7 @@ package agentid
 import (
 	"bytes"
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,6 +57,7 @@ type MCPWrapper struct {
 	statusLookup func(uri string, idx int) (int, error)
 	httpClient   *http.Client
 	mu           sync.RWMutex
+	authToken    string
 }
 
 // NewMCPWrapper validates configuration and installs fail-closed revocation
@@ -83,12 +85,12 @@ func NewMCPWrapper(config MCPWrapperConfig) (*MCPWrapper, error) {
 			return CheckStatus(token, idx, keys, config.Profile.MaxStatusAge, 0)
 		}
 		// Validate the token once at startup; stale tokens fail closed here.
-		if _, err := VerifyStatusTokenAtIssuedTime(token, keys,
+		if _, err := VerifyStatusTokenLive(token, keys,
 			config.Profile.MaxStatusAge); err != nil {
 			return nil, fmt.Errorf("status token unusable: %w", err)
 		}
 		wrapper.statusLookup = func(uri string, idx int) (int, error) {
-			return checkStatusAtIssuedTime(token, idx, keys, config.Profile.MaxStatusAge)
+			return CheckStatusLive(token, idx, keys, config.Profile.MaxStatusAge)
 		}
 	}
 	return wrapper, nil
@@ -257,9 +259,19 @@ func rpcError(id any, code int, message, receiptID string) map[string]any {
 	}
 }
 
-// NewMCPHandler mounts the wrapper as a JSON-RPC HTTP endpoint.
+// NewMCPHandler mounts the wrapper as an authenticated JSON-RPC endpoint.
 func NewMCPHandler(wrapper *MCPWrapper) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := wrapper.currentAuthToken()
+		if token == "" {
+			http.Error(w, "MCP auth token not configured", http.StatusServiceUnavailable)
+			return
+		}
+		if subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")),
+			[]byte("Bearer "+token)) != 1 {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -423,11 +435,11 @@ func (w *MCPWrapper) currentStatusLookup() func(string, int) (int, error) {
 // RefreshStatus atomically swaps the PEP's status token. A stale or malformed
 // token is rejected without disturbing the running lookup.
 func (w *MCPWrapper) RefreshStatus(token string, keys map[string]string, maxAge int) error {
-	if _, err := VerifyStatusTokenAtIssuedTime(token, keys, maxAge); err != nil {
+	if _, err := VerifyStatusTokenLive(token, keys, maxAge); err != nil {
 		return err
 	}
 	lookup := func(uri string, idx int) (int, error) {
-		return checkStatusAtIssuedTime(token, idx, keys, maxAge)
+		return CheckStatusLive(token, idx, keys, maxAge)
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -449,4 +461,17 @@ func (w *MCPWrapper) policyProvider() func() (Profile, error) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return w.config.PolicyProvider
+}
+
+// SetAuthToken configures the bearer token required by the HTTP surface.
+func (w *MCPWrapper) SetAuthToken(token string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.authToken = token
+}
+
+func (w *MCPWrapper) currentAuthToken() string {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.authToken
 }

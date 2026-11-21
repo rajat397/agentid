@@ -2,10 +2,13 @@ package agentid
 
 import (
 	"encoding/base64"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func fixturePaths(t *testing.T) (string, string) {
@@ -184,4 +187,48 @@ func bytesIndex(haystack, needle []byte) int {
 		}
 	}
 	return -1
+}
+
+func TestRFC3161ManagerAndPostTimestamp(t *testing.T) {
+	ledger := retentionLedger(t)
+	head, err := ChainHead(ledger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response, err := BuildMockTimestampResponse(head, "20261120000000Z", 42)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(response)
+	}))
+	defer server.Close()
+
+	manager, err := NewAnchorManager(AnchorConfig{TSAURL: server.URL,
+		Cadence: AnchorCadence{MaxReceipts: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	anchors, err := manager.Observe(ledger, "")
+	if err != nil || len(anchors) != 1 {
+		t.Fatalf("RFC 3161 anchoring failed: %d %v", len(anchors), err)
+	}
+	if problems := VerifyAnchorBinding(anchors[0]); len(problems) > 0 {
+		t.Fatalf("anchor binding failed: %v", problems)
+	}
+	if len(manager.Pending()) != 0 {
+		t.Fatal("anchor unexpectedly pending")
+	}
+	request, err := BuildTimestampReq(head)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := PostTimestamp(server.URL, request, time.Second)
+	if err != nil {
+		t.Fatalf("PostTimestamp failed: %v", err)
+	}
+	if _, err := ParseTimestampResp(response); err != nil {
+		t.Fatalf("posted response invalid: %v", err)
+	}
 }

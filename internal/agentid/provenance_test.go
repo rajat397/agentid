@@ -75,18 +75,40 @@ func TestUntrustedProvenanceRequiresAcknowledgement(t *testing.T) {
 		t.Fatalf("missing cosign_untrusted obligation: %+v", result.Obligations)
 	}
 
-	approval := map[string]any{
+	approver, _ := newSigner(t, "prov_approver")
+	baseApproval := map[string]any{
 		"id": "apr_prov", "delegation_id": delegation.ID,
 		"action": "support.ticket.resolve", "approver": "usr", "nonce": "n1",
-		"acknowledges_untrusted": true,
 	}
 	digest, err := EnvelopeDigest(action)
 	if err != nil {
 		t.Fatal(err)
 	}
-	approval["envelope_digest"] = digest
+	baseApproval["envelope_digest"] = digest
+	missingAck, err := SignApproval(baseApproval, approver)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, denied, err := Act(&Ledger{}, []Delegation{delegation}, action, profile, pub,
+		ActOptions{Approval: missingAck})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if denied.Outcome != "invalid" || !strings.Contains(denied.Reason, "acknowledge") {
+		t.Fatalf("approval without acknowledgement accepted: %s", denied.Reason)
+	}
+
+	withAck := map[string]any{}
+	for key, value := range baseApproval {
+		withAck[key] = value
+	}
+	withAck["acknowledges_untrusted"] = true
+	signed, err := SignApproval(withAck, approver)
+	if err != nil {
+		t.Fatal(err)
+	}
 	receipt, allowed, err := Act(&Ledger{}, []Delegation{delegation}, action, profile, pub,
-		ActOptions{Approval: approval})
+		ActOptions{Approval: signed})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,20 +125,6 @@ func TestUntrustedProvenanceRequiresAcknowledgement(t *testing.T) {
 	}
 	if !discharged {
 		t.Fatal("approval did not discharge the provenance obligation")
-	}
-
-	missingAck := map[string]any{}
-	for key, value := range approval {
-		missingAck[key] = value
-	}
-	delete(missingAck, "acknowledges_untrusted")
-	_, denied, err := Act(&Ledger{}, []Delegation{delegation}, action, profile, pub,
-		ActOptions{Approval: missingAck})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if denied.Outcome != "invalid" || !strings.Contains(denied.Reason, "acknowledge") {
-		t.Fatalf("approval without acknowledgement accepted: %s", denied.Reason)
 	}
 }
 

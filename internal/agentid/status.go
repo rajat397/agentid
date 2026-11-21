@@ -237,3 +237,16 @@ func decodeStatusAt(payload map[string]any, idx int) (int, error) {
 	}
 	return statuses[idx], nil
 }
+
+// VerifyStatusTokenLive verifies signature and wall-clock freshness for a
+// running PEP. Archived verification must use VerifyStatusTokenAtIssuedTime.
+func VerifyStatusTokenLive(token string, publicKeys map[string]string,
+	maxStatusAge int) (map[string]any, error) {
+	return VerifyStatusToken(token, publicKeys, int(time.Now().Unix()), maxStatusAge)
+}
+
+// CheckStatusLive resolves one index under wall-clock freshness bounds.
+func CheckStatusLive(token string, idx int, publicKeys map[string]string,
+	maxStatusAge int) (int, error) {
+	return CheckStatus(token, idx, publicKeys, maxStatusAge, int(time.Now().Unix()))
+}

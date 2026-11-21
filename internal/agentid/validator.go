@@ -270,7 +270,8 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 	if profile.RequireTrustedProvenance {
 		provenance := stringValue(envelope.Attributes["provenance"])
 		if provenance != ProvenanceTrusted {
-			ok, why := checkUntrustedApproval(opts.Approval, leaf, action, now)
+			ok, why := checkUntrustedApproval(opts.Approval, leaf, action, now,
+				profile.RequireSignedApprovals)
 			evaluated = append(evaluated, map[string]any{
 				"constraint": "provenance", "path": "/attributes/provenance",
 				"observed": provenance, "satisfied": ok,
@@ -383,7 +384,8 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 			if !needed {
 				continue
 			}
-			ok, why := checkApproval(opts.Approval, leaf, action, atom, observed, now)
+			ok, why := checkApproval(opts.Approval, leaf, action, atom, observed, now,
+				profile.RequireSignedApprovals)
 			approvalID := ""
 			if opts.Approval != nil {
 				approvalID = stringField(opts.Approval, "id")
@@ -446,9 +448,14 @@ func toDecimalValue(value any, err error) (*big.Rat, error) {
 }
 
 func checkApproval(approval map[string]any, leaf Delegation, action map[string]any,
-	atom Atom, observed *big.Rat, now time.Time) (bool, string) {
+	atom Atom, observed *big.Rat, now time.Time, requireSigned bool) (bool, string) {
 	if approval == nil {
 		return false, "no approval supplied"
+	}
+	if err := VerifyApprovalSignature(approval); err != nil {
+		if AsMap(approval["signature"]) != nil || requireSigned {
+			return false, err.Error()
+		}
 	}
 	if stringField(approval, "delegation_id") != leaf.ID {
 		return false, "approval names a different delegation"
@@ -485,9 +492,14 @@ func checkApproval(approval map[string]any, leaf Delegation, action map[string]a
 }
 
 func checkUntrustedApproval(approval map[string]any, leaf Delegation,
-	action map[string]any, now time.Time) (bool, string) {
+	action map[string]any, now time.Time, requireSigned bool) (bool, string) {
 	if approval == nil {
 		return false, "no approval supplied"
+	}
+	if err := VerifyApprovalSignature(approval); err != nil {
+		if AsMap(approval["signature"]) != nil || requireSigned {
+			return false, err.Error()
+		}
 	}
 	if stringField(approval, "delegation_id") != leaf.ID ||
 		stringField(approval, "action") != stringField(action, "action") {

@@ -50,6 +50,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdOTelServe(args[1:], stdout, stderr)
 	case "otel-demo":
 		return cmdOTelDemo(stdout, stderr)
+	case "verify-signed":
+		return cmdVerifySigned(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -612,7 +614,7 @@ func serveError(err error) int {
 }
 
 func cmdMCPServe(args []string, stdout, stderr io.Writer) int {
-	configPath, addr := "", "127.0.0.1:8090"
+	configPath, addr, authEnv := "", "127.0.0.1:8090", ""
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--config":
@@ -625,10 +627,20 @@ func cmdMCPServe(args []string, stdout, stderr io.Writer) int {
 				i++
 				addr = args[i]
 			}
+		case "--auth-token-env":
+			if i+1 < len(args) {
+				i++
+				authEnv = args[i]
+			}
 		}
 	}
-	if configPath == "" {
-		fmt.Fprintln(stderr, "mcp-serve requires --config <file>")
+	if configPath == "" || authEnv == "" {
+		fmt.Fprintln(stderr, "mcp-serve requires --config <file> and --auth-token-env <NAME>")
+		return 2
+	}
+	authToken := os.Getenv(authEnv)
+	if authToken == "" {
+		fmt.Fprintf(stderr, "environment variable %s is not set\n", authEnv)
 		return 2
 	}
 	wrapper, err := LoadMCPWrapper(configPath)
@@ -636,7 +648,8 @@ func cmdMCPServe(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	fmt.Fprintf(stdout, "MCP wrapper mounted on %s (credentials held by wrapper)\n", addr)
+	wrapper.SetAuthToken(authToken)
+	fmt.Fprintf(stdout, "MCP wrapper mounted on %s (authenticated; credentials held by wrapper)\n", addr)
 	return serveError(http.ListenAndServe(addr, NewMCPHandler(wrapper)))
 }
 
@@ -956,5 +969,26 @@ func cmdOTelDemo(stdout, stderr io.Writer) int {
 		"spans": spans, "reconciliation": result,
 	})
 	fmt.Fprintln(stdout, string(data))
+	return 0
+}
+
+func cmdVerifySigned(args []string, stdout, stderr io.Writer) int {
+	path := ""
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--artifact" && i+1 < len(args) {
+			i++
+			path = args[i]
+		}
+	}
+	if path == "" {
+		fmt.Fprintln(stderr, "verify-signed requires --artifact <file>")
+		return 2
+	}
+	algorithms, err := VerifySignedArtifact(path)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "FULLY VERIFIED: %v\n", algorithms)
 	return 0
 }

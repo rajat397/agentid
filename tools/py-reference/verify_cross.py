@@ -32,6 +32,16 @@ def main() -> int:
     if status != 0x01:
         print(f"FAILED: status token resolved to {status}", file=sys.stderr)
         return 1
+    pq = []
+    for key in ("delegation_extra", "receipt_extra"):
+        for sig in data.get(key) or []:
+            if sig.get("alg") != "ES256":
+                pq.append(sig.get("alg"))
+    if pq:
+        print("PARTIAL: ES256 primary signatures verified by Python oracle; "
+              f"PQ signatures present ({', '.join(pq)}) require a Go 1.27+ "
+              "verifier or an ML-DSA-capable external verifier.")
+        return 0
     print("Go-signed delegation, receipt and status token verified by Python reference")
     return 0
 

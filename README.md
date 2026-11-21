@@ -75,7 +75,13 @@ the opposite direction.
 (cd tools/py-reference && python3 -m pytest -q)   # frozen oracle suite
 go run ./tools/crosstest > /tmp/cross.json
 python3 tools/py-reference/verify_cross.py /tmp/cross.json
+go run ./cmd/agentid verify-signed --artifact /tmp/cross.json
 ```
+
+The Python oracle reports `PARTIAL` when PQ signatures are present; only the Go
+verifier checks ES256 **and** ML-DSA-65. See
+[reference/hardening.md](docs/reference/hardening.md) for measured coverage and
+residual gaps.
 
 The demo runs a complete lifecycle — an agent issues a delegation with a hard scope, a consequential action is attempted, the observation is denied and logged, the four questions are answered from receipts, the chain is verified — and prints every step. Nothing about it is mocked or animated; `agentid demo` is the same code the tests exercise.
 

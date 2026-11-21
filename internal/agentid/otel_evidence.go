@@ -31,6 +31,7 @@ var evidenceSpanKinds = []string{
 type TraceContext struct {
 	TraceID       string
 	SpanID        string
+	Flags         string
 	AuthorityHash string
 }
 
@@ -47,12 +48,17 @@ func NewTraceContext() (TraceContext, error) {
 	return TraceContext{
 		TraceID: hex.EncodeToString(traceID),
 		SpanID:  hex.EncodeToString(spanID),
+		Flags:   "01",
 	}, nil
 }
 
 // Traceparent renders the W3C traceparent header.
 func (t TraceContext) Traceparent() string {
-	return "00-" + t.TraceID + "-" + t.SpanID + "-01"
+	flags := t.Flags
+	if flags == "" {
+		flags = "01"
+	}
+	return "00-" + t.TraceID + "-" + t.SpanID + "-" + flags
 }
 
 // Tracestate publishes the authority binding as an agentid list member.
@@ -77,7 +83,7 @@ func ParseTraceparent(header string) (TraceContext, error) {
 	if _, err := hex.DecodeString(parts[2]); err != nil {
 		return TraceContext{}, err
 	}
-	return TraceContext{TraceID: parts[1], SpanID: parts[2]}, nil
+	return TraceContext{TraceID: parts[1], SpanID: parts[2], Flags: parts[3]}, nil
 }
 
 // AuthorityHash binds the action envelope, delegation and receipt to the trace.

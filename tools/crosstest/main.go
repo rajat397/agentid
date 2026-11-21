@@ -39,15 +39,29 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	keys := map[string]string{}
+	for kid, material := range signer.PublicKeys() {
+		keys[kid] = material
+	}
+	if pq, err := agentid.DefaultPQSigner(); err == nil {
+		for kid, material := range pq.PublicKeys() {
+			keys[kid] = material
+		}
+	}
 	output := map[string]any{
 		"public_pem":         string(publicPEM),
 		"delegation_body":    delegation.UnsignedBody(),
 		"delegation_sig":     delegation.Signature.Value,
+		"delegation_sig_obj": delegation.Signature,
+		"delegation_extra":   delegation.Signatures,
 		"receipt_body":       receipt.Body(),
 		"receipt_sig":        receipt.Signature.Value,
+		"receipt_sig_obj":    receipt.Signature,
+		"receipt_extra":      receipt.Signatures,
 		"decision":           result.Outcome,
 		"status_token":       token,
-		"status_public_keys": signer.PublicKeys(),
+		"status_public_keys": keys,
+		"signer_keys":        keys,
 	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetEscapeHTML(false)

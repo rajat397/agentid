@@ -18,6 +18,7 @@ type Profile struct {
 	SignatureAlgs            []string
 	PQSign                   bool
 	RequireTrustedProvenance bool
+	RequireSignedApprovals   bool
 	StageAllowlist           []string
 	Combining                string
 }
@@ -35,6 +36,7 @@ func (p Profile) document() map[string]any {
 		"signature_algs":             p.SignatureAlgs,
 		"pq_sign":                    p.PQSign,
 		"require_trusted_provenance": p.RequireTrustedProvenance,
+		"require_signed_approvals":   p.RequireSignedApprovals,
 		"stage_allowlist":            p.StageAllowlist,
 		"combining":                  p.Combining,
 	}
@@ -78,6 +80,12 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 	if combining == "" {
 		combining = CombiningDenyOverrides
 	}
+	requireSignedApprovals := false
+	if value, ok := raw["require_signed_approvals"]; ok {
+		if flag, ok := value.(bool); ok {
+			requireSignedApprovals = flag
+		}
+	}
 	requireTrusted := false
 	if value, ok := raw["require_trusted_provenance"]; ok {
 		if flag, ok := value.(bool); ok {
@@ -103,6 +111,7 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 		SignatureAlgs:            algs,
 		PQSign:                   pqSign,
 		RequireTrustedProvenance: requireTrusted,
+		RequireSignedApprovals:   requireSignedApprovals,
 		StageAllowlist:           stageAllowlist,
 		Combining:                combining,
 	}, nil
@@ -111,18 +120,19 @@ func ProfileFromMap(raw map[string]any) (Profile, error) {
 // ExampleProfile mirrors spec/validation-profile.example.json.
 func ExampleProfile() Profile {
 	return Profile{
-		URI:              "https://example.invalid/profiles/agentic-v1.json",
-		Iss:              "example-rp",
-		MaxClockSkew:     30,
-		MaxPopWindow:     300,
-		MaxTokenLifetime: 900,
-		MaxStatusAge:     60,
-		MaxChainLength:   3,
-		Predicates:       []string{"eq", "in", "max", "min", "window", "sum_max", "cosign_above"},
-		StatusValues:     map[string]any{"0x02": "suspended"},
-		SignatureAlgs:    []string{"ES256"},
-		PQSign:           true,
-		Combining:        CombiningDenyOverrides,
+		URI:                    "https://example.invalid/profiles/agentic-v1.json",
+		Iss:                    "example-rp",
+		MaxClockSkew:           30,
+		MaxPopWindow:           300,
+		MaxTokenLifetime:       900,
+		MaxStatusAge:           60,
+		MaxChainLength:         3,
+		Predicates:             []string{"eq", "in", "max", "min", "window", "sum_max", "cosign_above"},
+		StatusValues:           map[string]any{"0x02": "suspended"},
+		SignatureAlgs:          []string{"ES256"},
+		PQSign:                 true,
+		RequireSignedApprovals: true,
+		Combining:              CombiningDenyOverrides,
 	}
 }
 
