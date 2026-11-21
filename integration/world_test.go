@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/rajat397/agentid/attest"
 	"github.com/rajat397/agentid/internal/agentid"
@@ -16,23 +17,27 @@ import (
 // World is an isolated, in-process deployment used by real-world scenarios.
 // Every dependency is a local fixture: no network, no cloud, no shared state.
 type World struct {
-	t            *testing.T
-	signer       *agentid.DevSigner
-	rootPub      []byte
-	delegation   agentid.Delegation
-	profile      agentid.Profile
-	statusToken  string
-	statusKeys   map[string]string
-	statuses     []int
-	wrapper      *agentid.MCPWrapper
-	adsCalls     *int64
-	scimActive   *atomic.Bool
-	tsaURL       string
-	tsaCalls     *int64
-	bucketDir    string
-	bucketSigner agentid.Signer
-	bucketStamps []map[string]any
-	anchorMgr    interface {
+	t              *testing.T
+	signer         *agentid.DevSigner
+	rootPub        []byte
+	delegation     agentid.Delegation
+	profile        agentid.Profile
+	statusToken    string
+	statusKeys     map[string]string
+	statuses       []int
+	wrapper        *agentid.MCPWrapper
+	adsCalls       *int64
+	scimActive     *atomic.Bool
+	tsaURL         string
+	tsaCalls       *int64
+	bucketDir      string
+	bucketSigner   agentid.Signer
+	bucketStamps   []map[string]any
+	retentionDir   string
+	archivePath    string
+	archiveReceipt *agentid.Receipt
+	tombstones     []string
+	anchorMgr      interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
 	scimClient  agentid.SCIMClient
@@ -145,8 +150,9 @@ func NewWorld(t *testing.T) *World {
 	statuses := []int{0x00}
 	mapping := agentid.ToolMapping{
 		Name: "purchase_ad_credit", Action: "ad.credit.purchase", System: "meta-ads",
-		ResourceType: "ad_credit_account", AllowedArgs: []string{"amount", "currency"},
-		Stage: agentid.StageSideEffect, Provenance: agentid.ProvenanceTrusted,
+		ResourceType: "ad_credit_account",
+		AllowedArgs:  []string{"amount", "currency", "personal_data_refs"},
+		Stage:        agentid.StageSideEffect, Provenance: agentid.ProvenanceTrusted,
 		DownstreamURL: ads.URL, CredentialEnv: "MOCK_ADS_CREDENTIAL",
 	}
 	wrapper, err := agentid.NewMCPWrapper(agentid.MCPWrapperConfig{
@@ -173,14 +179,16 @@ func NewWorld(t *testing.T) *World {
 		scimActive: &active, scimClient: scimClient,
 		anchorMgr: manager, tsaURL: tsa.URL, tsaCalls: &tsaCalls,
 		mockTSAFail: &tsaFail, bucketDir: t.TempDir(), bucketSigner: signer,
-		ledger: worldLedger, ledgerPath: t.TempDir() + "/ledger.jsonl",
+		retentionDir: t.TempDir(),
+		ledger:       worldLedger, ledgerPath: t.TempDir() + "/ledger.jsonl",
 	}
 }
 
 func (w *World) callTool(amount string) map[string]any {
 	w.t.Helper()
 	value, err := agentid.DecodeJSON(agentid.MCPRequestJSON(1, "purchase_ad_credit",
-		map[string]any{"amount": amount, "currency": "USD"}))
+		map[string]any{"amount": amount, "currency": "USD",
+			"personal_data_refs": []any{"cust_4471"}}))
 	if err != nil {
 		w.t.Fatal(err)
 	}
@@ -316,4 +324,34 @@ func (w *World) VerifyBucketStamp(raw map[string]any) []string {
 	}
 	return agentid.VerifyBucketStamp(
 		agentid.BucketStampFromMap(raw), w.bucketSigner.PublicKeys(), head)
+}
+
+func (w *World) ExportRetention() {
+	w.t.Helper()
+	at := time.Now().AddDate(0, 14, 0)
+	path, receipt, err := agentid.ExportArchive(w.ledger, agentid.RetentionPolicy{
+		WindowMonths: agentid.DefaultRetentionMonths, ArchiveDir: w.retentionDir,
+	}, at)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	w.archivePath = path
+	w.archiveReceipt = receipt
+}
+
+func (w *World) TombstoneSubject() {
+	w.t.Helper()
+	receipt, err := agentid.Tombstone(w.ledger, "cust_4471", time.Now())
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	attributes := agentid.AsMap(agentid.AsMap(receipt.Resource)["attributes"])
+	for _, target := range agentid.AsSlice(attributes["targets"]) {
+		w.tombstones = append(w.tombstones, agentid.StringValue(target))
+	}
+}
+
+func (w *World) ArchiveProblem() []string {
+	w.t.Helper()
+	return agentid.VerifyArchive(w.archivePath, w.archiveReceipt)
 }

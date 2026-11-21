@@ -42,6 +42,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdMockAds(args[1:], stdout, stderr)
 	case "anchor-watch":
 		return cmdAnchorWatch(args[1:], stdout, stderr)
+	case "retention":
+		return cmdRetention(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -768,5 +770,56 @@ func cmdAnchorWatch(args []string, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "%d anchors written to %s; %d pending retry\n",
 		len(anchors), outPath, len(manager.Pending()))
+	return 0
+}
+
+func cmdRetention(args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 || args[0] != "export" {
+		fmt.Fprintln(stderr, "usage: agentid retention export --ledger <file> --archive-dir <dir> [--at ISO]")
+		return 2
+	}
+	ledgerPath, archiveDir, atValue := "", "", ""
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--ledger":
+			if i+1 < len(args) {
+				i++
+				ledgerPath = args[i]
+			}
+		case "--archive-dir":
+			if i+1 < len(args) {
+				i++
+				archiveDir = args[i]
+			}
+		case "--at":
+			if i+1 < len(args) {
+				i++
+				atValue = args[i]
+			}
+		}
+	}
+	if ledgerPath == "" || archiveDir == "" {
+		fmt.Fprintln(stderr, "retention export requires --ledger and --archive-dir")
+		return 2
+	}
+	ledger, err := loadLedgerFile(ledgerPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	at := time.Now()
+	if atValue != "" {
+		if parsed, err := time.Parse(timeLayout, atValue); err == nil {
+			at = parsed
+		}
+	}
+	path, receipt, err := ExportArchive(ledger, RetentionPolicy{
+		WindowMonths: DefaultRetentionMonths, ArchiveDir: archiveDir,
+	}, at)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "archived to %s (receipt %s)\n", path, receipt.ID)
 	return 0
 }
