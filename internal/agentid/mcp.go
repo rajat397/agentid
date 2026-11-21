@@ -35,17 +35,18 @@ type ToolMapping struct {
 
 // MCPWrapperConfig supplies the evidence and policy inputs to the wrapper.
 type MCPWrapperConfig struct {
-	Tools       []ToolMapping
-	Chain       []Delegation
-	Profile     Profile
-	RootKeyPEM  []byte
-	Signer      Signer
-	Fleet       string
-	StatusToken string
-	StatusKeys  map[string]string
-	Approval    map[string]any
-	Ledger      *Ledger
-	Trace       *TraceContext
+	Tools          []ToolMapping
+	Chain          []Delegation
+	Profile        Profile
+	RootKeyPEM     []byte
+	Signer         Signer
+	Fleet          string
+	StatusToken    string
+	StatusKeys     map[string]string
+	Approval       map[string]any
+	Ledger         *Ledger
+	Trace          *TraceContext
+	PolicyProvider func() (Profile, error)
 }
 
 // MCPWrapper is the policy enforcement point for an MCP tool surface.
@@ -135,8 +136,16 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 	if err != nil {
 		return rpcError(id, -32602, "invalid arguments: "+err.Error(), "")
 	}
+	policy := w.config.Profile
+	if provider := w.policyProvider(); provider != nil {
+		resolved, err := provider()
+		if err != nil {
+			return rpcError(id, -32000, "policy unavailable: "+err.Error(), "")
+		}
+		policy = resolved
+	}
 	statusLookup := w.currentStatusLookup()
-	_, result, err := Act(w.ledger, w.config.Chain, action, w.config.Profile,
+	_, result, err := Act(w.ledger, w.config.Chain, action, policy,
 		w.config.RootKeyPEM, ActOptions{
 			Fleet: w.config.Fleet, Signer: w.config.Signer,
 			Approval: w.config.Approval, StatusLookup: statusLookup,
@@ -428,3 +437,16 @@ func (w *MCPWrapper) RefreshStatus(token string, keys map[string]string, maxAge 
 
 // Ledger returns the wrapper's receipt ledger for evidence export and anchoring.
 func (w *MCPWrapper) Ledger() *Ledger { return w.ledger }
+
+// SetPolicyProvider attaches a control-plane-backed policy source to the PEP.
+func (w *MCPWrapper) SetPolicyProvider(provider func() (Profile, error)) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.config.PolicyProvider = provider
+}
+
+func (w *MCPWrapper) policyProvider() func() (Profile, error) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.config.PolicyProvider
+}

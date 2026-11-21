@@ -142,6 +142,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Control plane** — caller-owned policy store with signed bundles, revocation
+  publication and anchor orchestration; PEP caches fail closed when stale. See
+  [reference/control-plane.md](docs/reference/control-plane.md).
 - **OTel evidence layer** — five mutually-bound spans, W3C propagation, a
   caller-owned reconciliation collector emitting `agentid.mismatch`, pseudonymous
   defaults and erasure hints. See

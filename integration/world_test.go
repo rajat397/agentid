@@ -47,6 +47,9 @@ type World struct {
 	spanProblems    []string
 	spanTraceID     string
 	trace           agentid.TraceContext
+	controlPlane    bool
+	cp              *agentid.ControlPlane
+	cache           *agentid.PolicyCache
 	anchorMgr       interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
@@ -186,6 +189,22 @@ func NewWorld(t *testing.T) *World {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cp, err := agentid.NewControlPlane(signer, registry, publisher, manager)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cp.PublishPolicy(profile); err != nil {
+		t.Fatal(err)
+	}
+	bundle, err := cp.PolicyBundle()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := agentid.NewPolicyCache(signer.PublicKeys(), 5*time.Minute)
+	if err := cache.Refresh(bundle); err != nil {
+		t.Fatal(err)
+	}
+	wrapper.SetPolicyProvider(cache.Profile)
 	return &World{
 		t: t, signer: signer, rootPub: publicPEM, delegation: delegation,
 		profile: profile, statusToken: token, statusKeys: signer.PublicKeys(),
@@ -196,6 +215,7 @@ func NewWorld(t *testing.T) *World {
 		mockTSAFail: &tsaFail, bucketDir: t.TempDir(), bucketSigner: signer,
 		retentionDir: t.TempDir(),
 		ledger:       worldLedger, ledgerPath: t.TempDir() + "/ledger.jsonl",
+		cp: cp, cache: cache, controlPlane: true,
 	}
 }
 
@@ -465,4 +485,32 @@ func spanSetJSON(spans []map[string]any) string {
 func (w *World) SpanProblemsFor(spans []map[string]any) []string {
 	w.t.Helper()
 	return mismatchStrings(agentid.ReconcileEvidenceSpans(spans, w.ledger))
+}
+
+func (w *World) PublishPolicyChange() {
+	w.t.Helper()
+	document := agentid.ExampleProfile().Document()
+	document["stage_allowlist"] = []any{agentid.StagePlan}
+	profile, err := agentid.ProfileFromMap(document)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	if _, err := w.cp.PublishPolicy(profile); err != nil {
+		w.t.Fatal(err)
+	}
+}
+
+func (w *World) RefreshPEP() {
+	w.t.Helper()
+	if !w.controlPlane {
+		w.cache.Expire()
+		return
+	}
+	bundle, err := w.cp.PolicyBundle()
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	if err := w.cache.Refresh(bundle); err != nil {
+		w.t.Fatal(err)
+	}
 }
