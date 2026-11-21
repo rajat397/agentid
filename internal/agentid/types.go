@@ -21,6 +21,7 @@ type Delegation struct {
 	Issuer             map[string]any
 	StatusList         map[string]any
 	Attestation        *attest.Attestation
+	Draft              bool
 	SignerKeys         map[string]string
 }
 
@@ -44,6 +45,9 @@ func (d Delegation) UnsignedBody() map[string]any {
 	}
 	if d.Attestation != nil {
 		body["attestation"] = d.Attestation
+	}
+	if d.Draft {
+		body["draft"] = true
 	}
 	return body
 }
@@ -71,6 +75,7 @@ func DelegationFromMap(raw map[string]any) (Delegation, error) {
 		Issuer:             AsMap(raw["issuer"]),
 		StatusList:         AsMap(raw["status_list"]),
 		Attestation:        attestationFromMap(raw["attestation"]),
+		Draft:              raw["draft"] == true,
 	}, nil
 }
 
@@ -229,6 +234,9 @@ func (d Delegation) ToMap() map[string]any {
 	}
 	if d.StatusList != nil {
 		out["status_list"] = d.StatusList
+	}
+	if d.Draft {
+		out["draft"] = true
 	}
 	if d.Attestation != nil {
 		out["attestation"] = map[string]any{

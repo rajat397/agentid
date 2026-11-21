@@ -50,6 +50,7 @@ type World struct {
 	controlPlane    bool
 	cp              *agentid.ControlPlane
 	cache           *agentid.PolicyCache
+	intent          agentid.IntentCompilation
 	anchorMgr       interface {
 		Observe(*agentid.Ledger, string) ([]map[string]any, error)
 	}
@@ -569,4 +570,81 @@ func (w *World) TypedCall(args map[string]any, typeProfile map[string]any) map[s
 	}
 	request, _ := agentid.DecodeJSON(agentid.MCPRequestJSON(1, "typed.tool", args))
 	return wrapper.HandleRPC(context.Background(), agentid.AsMap(request))
+}
+
+func (w *World) callWithDelegation(delegation agentid.Delegation,
+	pub []byte, signer agentid.Signer) map[string]any {
+	w.t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	w.t.Cleanup(server.Close)
+	w.t.Setenv("INTENT_CREDENTIAL", "intent-secret")
+	mapping := agentid.ToolMapping{
+		Name: "intent.tool", Action: "ad.credit.purchase", System: "meta-ads",
+		ResourceType:  "ad_credit_account",
+		AllowedArgs:   []string{"amount", "currency", "region"},
+		DownstreamURL: server.URL, CredentialEnv: "INTENT_CREDENTIAL",
+	}
+	wrapper, err := agentid.NewMCPWrapper(agentid.MCPWrapperConfig{
+		Tools: []agentid.ToolMapping{mapping}, Chain: []agentid.Delegation{delegation},
+		Profile: w.profile, RootKeyPEM: pub, Signer: signer,
+	})
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	request, _ := agentid.DecodeJSON(agentid.MCPRequestJSON(1, "intent.tool", map[string]any{
+		"amount": "100.00", "currency": "USD", "region": "eu",
+	}))
+	return wrapper.HandleRPC(context.Background(), agentid.AsMap(request))
+}
+
+func (w *World) CompileIntent(text string) map[string]any {
+	w.t.Helper()
+	w.intent = agentid.CompileIntent(text)
+	return w.intent.ToMap()
+}
+
+func (w *World) ActivateIntent(candidate map[string]any) map[string]any {
+	w.t.Helper()
+	return w.callWithDelegation(w.intent.Draft, w.rootPub, w.signer)
+}
+
+func (w *World) CompilerUnmatched(candidate map[string]any) []any {
+	w.t.Helper()
+	if items, ok := candidate["unmatched"].([]any); ok {
+		return items
+	}
+	return nil
+}
+
+func CompilerDigest(candidate map[string]any) string {
+	if digest, ok := candidate["digest"].(string); ok {
+		return digest
+	}
+	return ""
+}
+
+func (w *World) ActivateIntentWithReview(candidate map[string]any) map[string]any {
+	w.t.Helper()
+	reviewer, reviewerPub, err := agentid.GenerateKeyPair()
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	reviewSigner, err := agentid.NewDevSigner(reviewer, reviewerPub, "reviewer_key")
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	approval, err := agentid.SignApproval(map[string]any{
+		"id": "apr_intent", "approver": "human@rp", "nonce": "intent-1",
+		"approves_compilation_digest": w.intent.Digest,
+	}, reviewSigner)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	active, err := agentid.ActivateIntent(w.intent, approval, w.signer)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	return w.callWithDelegation(active, w.rootPub, w.signer)
 }

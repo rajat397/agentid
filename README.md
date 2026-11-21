@@ -148,6 +148,9 @@ Every claim this repository makes about a standard was checked against the norma
   [reference/credential-service.md](docs/reference/credential-service.md).
 - **OTel emitter** (`agentid[otel]`) — emits OTel spans under the proposed
   `gen_ai.agent.identity.*` attributes, marked Development.
+- **Intent compiler** — bounded NL patterns produce drafts; a human-signed
+  compilation digest activates authority. See
+  [reference/intent-compiler.md](docs/reference/intent-compiler.md).
 - **Predicate typing** — type-checked attributes with a Type Profile escape
   hatch for custom enums. See [reference/typing.md](docs/reference/typing.md).
 - **Control plane** — caller-owned policy store with signed bundles, revocation

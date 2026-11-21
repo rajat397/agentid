@@ -40,6 +40,9 @@ func Validate(chain []Delegation, action map[string]any, profile Profile,
 	if len(chain) == 0 {
 		return fail("empty delegation chain")
 	}
+	if chain[len(chain)-1].Draft {
+		return fail("delegation is a draft; human review required")
+	}
 	if opts.Revoked[chain[len(chain)-1].ID] {
 		return fail("leaf delegation has been revoked")
 	}
