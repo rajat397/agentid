@@ -280,41 +280,13 @@
     <div class="terminal" id="terminal-wrap">
       <div class="terminal-bar"><span class="lights"><i></i><i></i><i></i></span><span class="terminal-title mono">agentid demo — real output, regenerated every deploy</span></div>
       <pre class="terminal-body" id="demo-capture"><!-- DEMO_CAPTURE_START -->
+agentid — the full lifecycle, running against real Go code
 
-agentid — the full lifecycle, running against real code
-=======================================================
-
-1. A human grants authority — signed, scoped, expiring
-======================================================
-   constrain: ad.credit.purchase on meta-ads, hard cap $2,000,
-              approval required above $500, expires in 30 minutes.
-   The agent never holds the downstream credential. The enforcement point does.
-   delegation_id = dlg_2f808d32b5fc31b5
-   signature     = valid (ES256, kid dlg-key-2026-11)
-
-2. The agent attempts an action that exceeds its authority — and is stopped
-===========================================================================
-   outcome   = invalid
-   reason    = amount 4500.00 exceeds cap 2000.00
-   receipt   = rcp_21aa1223172d7e5e  (action=ad.credit.purchase, result=denied)
-   The agent may not exceed its authorized cap. The denial itself is logged.
-
-3. Within authority — executed, chained, verifiable
-===================================================
-   outcome   = valid   (approval apr_01DEMO)
-   receipt   = rcp_6579bd3766d9257b
-
-4. The four questions, answered from receipts alone
-===================================================
-   1. Which agent?      spiffe://example.trust/agent/marketing-agent
-   2. Acting for whom?  oidc|acme-retail|usr_8842
-   3. Which credential? dlg-key-2026-11
-   4. Under which approval? apr_01DEMO
-
-5. Tamper with history — the chain catches it
-=============================================
-   hash chain verifies: NO
-   broken at: receipt[1] prev_hash broken: expected 5b3f1737410b… got 21aa1223172d…
+1. Human grants authority: dlg_ce70f4a0a753a6cd (kid demo_signer)
+2. Over-cap action: invalid — /attributes/amount max predicate violated (observed 4500.00) (receipt rcp_7385a74ba2dfca77)
+3. Within authority: valid (receipt rcp_f942e2e15efdf741)
+4. Four questions: agent=spiffe://example.trust/agent/marketing-agent, subject=oidc|acme-retail|usr_8842, credential=demo_signer, approval=apr_01DEMO
+5. Tampered receipt: signatures + hash chain verify: false (receipt[0] signature invalid or kid unknown)
 <!-- DEMO_CAPTURE_END --></pre>
     </div>
   </div>
@@ -335,7 +307,7 @@ agentid — the full lifecycle, running against real code
       <a class="ev-card" href="https://github.com/rajat397/agentid">
         <div class="ev-k mono">REPOSITORY</div>
         <div class="ev-t">github.com/rajat397/agentid</div>
-        <div class="ev-d">MIT-licensed. One dependency. 13 tests, all passing. Read the threat model before you deploy anything.</div>
+        <div class="ev-d">MIT-licensed. Go 1.27 standard-library core. 142 tests, all passing. Read the threat model before you deploy anything.</div>
         <div class="ev-arrow mono">→</div>
       </a>
       <a class="ev-card" href="https://rajat397.github.io/agentid/">
@@ -349,37 +321,28 @@ agentid — the full lifecycle, running against real code
         <div class="ev-t">Right to erasure, executable</div>
         <div class="ev-d">agent-collected personal data enumerable from receipts alone — before any manual effort, inside one month by construction.</div>
         <pre id="erasure-capture" class="mini-term"><!-- ERASURE_CAPTURE_START -->
-
-erasure plan — subject cust_4471
-================================
 {
-  "subject_id": "cust_4471",
-  "created_at": "2026-11-17T22:02:46Z",
-  "deadline": "2026-12-17T22:02:46Z",
+  "created_at": "2026-11-21T19:28:39Z",
   "days_remaining": 30,
-  "total_receipts": 2,
+  "deadline": "2026-12-21T19:28:39Z",
   "delegations": [
-    "dlg_3439a310c444157a"
+    "dlg_acd63e35a38d8586"
   ],
+  "derived_artifacts": [],
   "downstream_systems": [
     {
-      "system": "zendesk",
-      "records": 4,
-      "deletion_method": "customer_connector"
+      "deletion_method": "customer_connector",
+      "records": 62,
+      "system": "internal_crm"
     },
     {
-      "system": "internal_crm",
-      "records": 28,
-      "deletion_method": "customer_connector"
+      "deletion_method": "customer_connector",
+      "records": 4,
+      "system": "zendesk"
     }
   ],
-  "derived_artifacts": [
-    {
-      "artifact": "support_outcomes_model",
-      "owner": "support-analytics",
-      "action_required": "customer_action"
-    }
-  ]
+  "subject_id": "cust_4471",
+  "total_receipts": 2
 }
 <!-- ERASURE_CAPTURE_END --></pre>
       </div>

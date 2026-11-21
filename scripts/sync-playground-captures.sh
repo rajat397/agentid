@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# Regenerate the real-CLI-output sections of the playground from the live code.
+# Regenerate the real-CLI-output sections of the playground from the Go CLI.
 # Run from repo root: bash scripts/sync-playground-captures.sh
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-AG="$REPO/.venv/bin/agentid"
-[ -x "$AG" ] || AG="$(command -v agentid)"
+cd "$REPO"
+GO_BIN="${GO:-go}"
+SUBJECT="${ERASURE_SUBJECT:-cust_4471}"
 
-demo_html="$("$AG" demo | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')"
-erasure_html="$("$AG" erasure cust_4471 --demo | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')"
+escape() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
+
+demo_html="$("$GO_BIN" run ./cmd/agentid demo 2>/dev/null | escape)"
+erasure_html="$("$GO_BIN" run ./cmd/agentid erasure "$SUBJECT" --demo 2>/dev/null | escape)"
 
 python3 - "$REPO/playground/index.html" "$demo_html" "$erasure_html" <<'PYEOF'
 import sys, re

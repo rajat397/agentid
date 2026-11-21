@@ -118,10 +118,21 @@ func buildDemoLedger() (*demoBundle, error) {
 	if err != nil {
 		return nil, err
 	}
-	approval := map[string]any{
+	reviewerPEM, reviewerPub, err := GenerateKeyPair()
+	if err != nil {
+		return nil, err
+	}
+	reviewer, err := NewDevSigner(reviewerPEM, reviewerPub, "demo_reviewer")
+	if err != nil {
+		return nil, err
+	}
+	approval, err := SignApproval(map[string]any{
 		"id": "apr_01DEMO", "delegation_id": delegation.ID,
 		"action": "ad.credit.purchase", "amount": "2000.00",
 		"approver": "oidc|acme-retail|usr_8842", "nonce": "nonce-demo",
+	}, reviewer)
+	if err != nil {
+		return nil, err
 	}
 	allowed, allowedResult, err := Act(ledger, []Delegation{delegation}, map[string]any{
 		"action": "ad.credit.purchase", "system": "meta-ads", "amount": "2000.00",
@@ -186,6 +197,7 @@ func cmdErasure(args []string, stdout io.Writer) int {
 		}
 	}
 	ledger := &Ledger{}
+	registry := map[string][]any{}
 	if ledgerPath == "" {
 		privatePEM, publicPEM, err := GenerateKeyPair()
 		if err != nil {
@@ -205,6 +217,10 @@ func cmdErasure(args []string, stdout io.Writer) int {
 				"action": "support.reply", "system": "zendesk",
 				"personal_data_refs": []any{subject},
 			}, ExampleProfile(), publicPEM, ActOptions{Signer: signer})
+		}
+		registry[subject] = []any{
+			map[string]any{"system": "zendesk", "records": 2, "method": "customer_connector"},
+			map[string]any{"system": "internal_crm", "records": 31, "method": "customer_connector"},
 		}
 	} else {
 		data, err := os.ReadFile(ledgerPath)
@@ -228,7 +244,6 @@ func cmdErasure(args []string, stdout io.Writer) int {
 			}
 		}
 	}
-	registry := map[string][]any{}
 	plan := BuildErasurePlan(ledger, subject, registry, nil, "EU")
 	data, _ := json.MarshalIndent(plan.ToMap(), "", "  ")
 	fmt.Fprintln(stdout, string(data))

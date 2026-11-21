@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "gen:capture": "python3 ../scripts/generate_playground.py > src/capture.html"
+    "gen:capture": "bash ../scripts/sync-playground-captures.sh"
   },
   "dependencies": {
     "three": "^0.178.0"
