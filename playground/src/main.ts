@@ -36,6 +36,7 @@ const beginBtn = document.getElementById("journey-begin") as HTMLButtonElement |
 const backBtn = document.getElementById("journey-back") as HTMLButtonElement | null;
 const nextBtn = document.getElementById("journey-next") as HTMLButtonElement | null;
 const replayBtn = document.getElementById("journey-replay") as HTMLButtonElement | null;
+const pauseBtn = document.getElementById("journey-pause") as HTMLButtonElement | null;
 const mount3d = document.getElementById("journey-3d");
 const certCard = document.getElementById("cert-card");
 const certTitle = document.getElementById("cert-title");
@@ -46,6 +47,7 @@ let current = -1;
 let artifactIndex = 0;
 let branchOpen = false;
 let autoTimer: number | null = null;
+let started = false;
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function pretty(value: unknown): string {
@@ -175,6 +177,7 @@ function setStep(index: number): void {
   if (nextBtn) nextBtn.disabled = index === steps.length - 1;
   if (beginBtn) beginBtn.hidden = true;
   if (replayBtn) replayBtn.disabled = false;
+  updatePauseButton();
   scene?.setStep(index);
   if (!reduced) {
     gsap.fromTo([titleEl, detailEl].filter(Boolean),
@@ -205,20 +208,38 @@ function stopAuto(): void {
   }
 }
 
+function updatePauseButton(): void {
+  if (!pauseBtn) return;
+  if (reduced) {
+    pauseBtn.hidden = true;
+    return;
+  }
+  pauseBtn.hidden = false;
+  const atEnd = current >= steps.length - 1;
+  pauseBtn.disabled = !started || atEnd;
+  pauseBtn.textContent = autoTimer === null ? "Resume" : "Pause";
+}
+
+function startAuto(): void {
+  if (reduced || started === false || current >= steps.length - 1) return;
+  stopAuto();
+  autoTimer = window.setInterval(() => {
+    if (current >= steps.length - 1) {
+      stopAuto();
+      updatePauseButton();
+      return;
+    }
+    setStep(current + 1);
+  }, 2600);
+  updatePauseButton();
+}
+
 function begin(): void {
   if (steps.length === 0) return;
+  started = true;
   document.body.classList.add("journey-started");
-  stopAuto();
   setStep(0);
-  if (!reduced) {
-    autoTimer = window.setInterval(() => {
-      if (current >= steps.length - 1) {
-        stopAuto();
-        return;
-      }
-      setStep(current + 1);
-    }, 2600);
-  }
+  startAuto();
 }
 
 void init3d();
@@ -227,8 +248,16 @@ renderProgress();
 beginBtn?.addEventListener("click", begin);
 backBtn?.addEventListener("click", () => { stopAuto(); setStep(Math.max(0, current - 1)); });
 nextBtn?.addEventListener("click", () => { stopAuto(); setStep(Math.min(steps.length - 1, current + 1)); });
-replayBtn?.addEventListener("click", () => { stopAuto(); setStep(0); });
+replayBtn?.addEventListener("click", () => { stopAuto(); setStep(0); startAuto(); });
 branchBtn?.addEventListener("click", () => { stopAuto(); openBranch(); });
+pauseBtn?.addEventListener("click", () => {
+  if (autoTimer !== null) {
+    stopAuto();
+    updatePauseButton();
+    return;
+  }
+  startAuto();
+});
 returnBtn?.addEventListener("click", () => setStep(Math.max(0, current)));
 
 /* ── terminal reveal on scroll ─────────────────────────────────── */
