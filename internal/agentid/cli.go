@@ -62,6 +62,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdWrap(args[1:], stdout, stderr)
 	case "claude-hook":
 		return cmdClaudeHook(args[1:], stdout, stderr)
+	case "hook-serve":
+		return cmdHookServe(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -1175,4 +1177,33 @@ func cmdClaudeHook(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, string(output))
 	}
 	return 0
+}
+
+func cmdHookServe(args []string, stdout, stderr io.Writer) int {
+	configPath, addr := "", "127.0.0.1:8092"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--config":
+			if i+1 < len(args) {
+				i++
+				configPath = args[i]
+			}
+		case "--addr":
+			if i+1 < len(args) {
+				i++
+				addr = args[i]
+			}
+		}
+	}
+	if configPath == "" {
+		fmt.Fprintln(stderr, "hook-serve requires --config <file>")
+		return 2
+	}
+	wrapper, err := LoadMCPWrapper(configPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "agentid pre-tool decisions on %s/v1/pre-tool\n", addr)
+	return serveError(http.ListenAndServe(addr, HTTPHookHandler(NewClaudeHookAdapter(wrapper))))
 }

@@ -186,6 +186,9 @@ Every claim this repository makes about a standard was checked against the norma
 - **Policy-set combining** — profile-pinned deny-overrides across multiple
   profiles with canonical obligation union and implicit deny. See
   [reference/policy-combining.md](docs/reference/policy-combining.md).
+- **LangChain/LangGraph adapter** — one middleware line around every tool call,
+  backed by the local Go decision service. See
+  [reference/langchain-adapter.md](docs/reference/langchain-adapter.md).
 - **MCP transport adapter** — `agentid wrap` proxies stdio MCP servers with no
   agent-code change and annotates allowed replies with receipt ids. See
   [reference/mcp-transport-adapter.md](docs/reference/mcp-transport-adapter.md).
