@@ -533,3 +533,15 @@ func firstObligationType(obligations []any) string {
 	}
 	return ""
 }
+
+// HasTool reports whether a tool is covered by the wrapper's operator config.
+func (w *MCPWrapper) HasTool(name string) bool {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	for _, tool := range w.config.Tools {
+		if tool.Name == name {
+			return true
+		}
+	}
+	return false
+}

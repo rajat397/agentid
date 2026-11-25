@@ -60,6 +60,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdFlowDemo(args[1:], stdout, stderr)
 	case "wrap":
 		return cmdWrap(args[1:], stdout, stderr)
+	case "claude-hook":
+		return cmdClaudeHook(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -1138,6 +1140,39 @@ func cmdWrap(args []string, stdout, stderr io.Writer) int {
 	if err := command.Wait(); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
+	}
+	return 0
+}
+
+func cmdClaudeHook(args []string, stdout, stderr io.Writer) int {
+	configPath := ""
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--config" && i+1 < len(args) {
+			i++
+			configPath = args[i]
+		}
+	}
+	if configPath == "" {
+		fmt.Fprintln(stderr, "claude-hook requires --config <file>")
+		return 2
+	}
+	wrapper, err := LoadMCPWrapper(configPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	input, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	output, err := NewClaudeHookAdapter(wrapper).ProcessHook(context.Background(), input)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if len(output) > 0 {
+		fmt.Fprintln(stdout, string(output))
 	}
 	return 0
 }
