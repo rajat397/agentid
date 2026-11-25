@@ -189,6 +189,14 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 		}
 		return response
 	}
+	if mapping.DownstreamURL == "" {
+		return map[string]any{
+			"jsonrpc": "2.0", "id": id,
+			"result": map[string]any{
+				"_meta": map[string]any{"receipt_id": receipt.ID},
+			},
+		}
+	}
 	credential := os.Getenv(mapping.CredentialEnv)
 	if credential == "" {
 		return rpcError(id, -32000, "downstream credential is not configured", receipt.ID)
@@ -229,6 +237,9 @@ func (w *MCPWrapper) actionFrom(mapping ToolMapping, arguments map[string]any) (
 		}
 	}
 	// Authority fields are always overwritten from operator configuration.
+	action["action"] = mapping.Action
+	action["system"] = mapping.System
+	action["resource_type"] = mapping.ResourceType
 	action["stage"] = mapping.Stage
 	if mapping.Provenance != "" {
 		action["provenance"] = mapping.Provenance

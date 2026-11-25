@@ -186,6 +186,9 @@ Every claim this repository makes about a standard was checked against the norma
 - **Policy-set combining** — profile-pinned deny-overrides across multiple
   profiles with canonical obligation union and implicit deny. See
   [reference/policy-combining.md](docs/reference/policy-combining.md).
+- **MCP transport adapter** — `agentid wrap` proxies stdio MCP servers with no
+  agent-code change and annotates allowed replies with receipt ids. See
+  [reference/mcp-transport-adapter.md](docs/reference/mcp-transport-adapter.md).
 - **MCP wrapper PEP** — holds downstream credentials, maps `tools/call` into
   action envelopes, validates before any tool execution, and receipts every
   decision. See [reference/mcp-wrapper.md](docs/reference/mcp-wrapper.md).

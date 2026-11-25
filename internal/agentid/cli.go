@@ -1,12 +1,16 @@
 package agentid
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rajat397/agentid/attest"
@@ -54,6 +58,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdVerifySigned(args[1:], stdout, stderr)
 	case "flow-demo":
 		return cmdFlowDemo(args[1:], stdout, stderr)
+	case "wrap":
+		return cmdWrap(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
 		return 2
@@ -1046,5 +1052,92 @@ func cmdFlowDemo(args []string, stdout, stderr io.Writer) int {
 	}
 	data, _ := json.Marshal(trace)
 	fmt.Fprintln(stdout, string(data))
+	return 0
+}
+
+func cmdWrap(args []string, stdout, stderr io.Writer) int {
+	configPath := ""
+	separator := -1
+	for i, arg := range args {
+		if arg == "--config" && i+1 < len(args) {
+			i++
+			configPath = args[i]
+		}
+		if arg == "--" {
+			separator = i
+			break
+		}
+	}
+	if configPath == "" || separator < 0 || separator+1 >= len(args) {
+		fmt.Fprintln(stderr, "usage: agentid wrap --config <file> -- <mcp-server-command> [args...]")
+		return 2
+	}
+	wrapper, err := LoadMCPWrapper(configPath)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	proxy := NewMCPProxy(wrapper)
+	command := exec.Command(args[separator+1], args[separator+2:]...)
+	command.Stderr = stderr
+	childIn, err := command.StdinPipe()
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	childOut, err := command.StdoutPipe()
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if err := command.Start(); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+
+	var outMu sync.Mutex
+	writeOut := func(data []byte) {
+		outMu.Lock()
+		defer outMu.Unlock()
+		fmt.Fprintln(stdout, string(data))
+	}
+	done := make(chan struct{}, 2)
+
+	go func() {
+		defer func() { done <- struct{}{} }()
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Buffer(make([]byte, 64*1024), 1<<20)
+		for scanner.Scan() {
+			forward, response := proxy.ProcessClient(context.Background(), scanner.Bytes())
+			if response != nil {
+				writeOut(response)
+				continue
+			}
+			if forward {
+				childIn.Write(append(scanner.Bytes(), '\n'))
+			}
+		}
+		childIn.Close()
+	}()
+
+	go func() {
+		defer func() { done <- struct{}{} }()
+		scanner := bufio.NewScanner(childOut)
+		scanner.Buffer(make([]byte, 64*1024), 1<<20)
+		for scanner.Scan() {
+			response, err := proxy.ProcessServerResponse(scanner.Bytes())
+			if err != nil {
+				continue
+			}
+			writeOut(response)
+		}
+	}()
+
+	<-done
+	<-done
+	if err := command.Wait(); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
 	return 0
 }
