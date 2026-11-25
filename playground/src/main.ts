@@ -285,9 +285,12 @@ window.addEventListener("scroll", onScroll, { passive: true });
 onScroll();
 
 /* ── copyable commands ─────────────────────────────────────────── */
-document.querySelectorAll<HTMLButtonElement>("button[data-copy]").forEach((button) => {
+document.querySelectorAll<HTMLButtonElement>("button[data-copy], button[data-copy-source]").forEach((button) => {
   button.addEventListener("click", async () => {
-    const value = button.dataset.copy ?? "";
+    const sourceId = button.dataset.copySource;
+    const value = sourceId
+      ? document.getElementById(sourceId)?.textContent ?? ""
+      : button.dataset.copy ?? "";
     try {
       await navigator.clipboard.writeText(value);
       button.textContent = "copied";
@@ -301,3 +304,206 @@ document.querySelectorAll<HTMLButtonElement>("button[data-copy]").forEach((butto
     }
   });
 });
+
+/* ── adapter setup tabs ────────────────────────────────────────── */
+type AdapterSetup = { kicker: string; title: string; note: string; lang: string; code: string; doc: string };
+const docsRoot = "https://github.com/rajat397/agentid/blob/main/docs/reference/";
+const adapterSetups: Record<string, AdapterSetup> = {
+  mcp: {
+    kicker: "SETUP · MCP",
+    title: "Wrap an MCP stdio server",
+    note: "The wrapper holds downstream credentials. Authority fields come from operator config, never from tool arguments. Denied calls return JSON-RPC -32000 with a receipt id.",
+    lang: "bash",
+    code: `# From the repo root
+go build -o agentid ./cmd/agentid
+
+# Wrap an existing stdio MCP server
+./agentid wrap --config agentid.json -- <your-mcp-server-command>`,
+    doc: `${docsRoot}mcp-transport-adapter.md`,
+  },
+  claude: {
+    kicker: "SETUP · CLAUDE CODE",
+    title: "Add a PreToolUse command hook",
+    note: "The matcher must be the real tool name Claude Code uses. For MCP tools that is mcp__<server>__<tool>. Allowed calls return no decision so normal permissions continue.",
+    lang: "json",
+    code: `# Build once, then add this to .claude/settings.json
+go build -o agentid ./cmd/agentid
+
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__ads__purchase_ad_credit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/absolute/path/to/agentid",
+            "args": ["claude-hook", "--config", "/absolute/path/agentid.json"]
+          }
+        ]
+      }
+    ]
+  }
+}`,
+    doc: `${docsRoot}claude-code-hook.md`,
+  },
+  langchain: {
+    kicker: "SETUP · LANGCHAIN / LANGGRAPH",
+    title: "Add one middleware entry",
+    note: "The thin Python adapter posts tool_name and tool_input to the local Go service and fails closed on any error, timeout or unexpected response.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+from agentid_langchain import AgentIDMiddleware
+
+agent = create_agent(
+    model=...,
+    tools=...,
+    middleware=[AgentIDMiddleware("http://127.0.0.1:8092")],
+)
+
+# Run from the repo root with the adapter importable
+# PYTHONPATH=adapters/langchain python your_agent.py`,
+    doc: `${docsRoot}langchain-adapter.md`,
+  },
+  adk: {
+    kicker: "SETUP · GOOGLE ADK",
+    title: "Attach one before-tool callback",
+    note: "The callback has the exact ADK signature (tool, args, tool_context). It returns None on allow and a truthy denial dict that short-circuits execution.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+from agentid_adk import AgentIDBeforeToolCallback
+
+agent = LlmAgent(
+    name="agent",
+    model=...,
+    tools=...,
+    before_tool_callback=AgentIDBeforeToolCallback("http://127.0.0.1:8092"),
+)
+
+# PYTHONPATH=adapters/adk python your_agent.py`,
+    doc: `${docsRoot}adk-adapter.md`,
+  },
+  crewai: {
+    kicker: "SETUP · CREWAI",
+    title: "Register a global PRE_TOOL_CALL hook",
+    note: "An allow returns None. A denial raises HookAborted with the receipt id, so execution cannot continue even when other exceptions are swallowed.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+from crewai.hooks import on, InterceptionPoint
+from agentid_crewai import AgentIDPreToolHook
+
+@on(InterceptionPoint.PRE_TOOL_CALL)
+def agentid_gate(ctx):
+    return AgentIDPreToolHook("http://127.0.0.1:8092")(ctx)
+
+# PYTHONPATH=adapters/crewai python your_agent.py`,
+    doc: `${docsRoot}crewai-adapter.md`,
+  },
+  sk: {
+    kicker: "SETUP · SEMANTIC KERNEL",
+    title: "Install a function-invocation filter",
+    note: "The filter calls next(context) only on allow. On deny it sets context.result to a reason carrying the receipt and approval ids and never invokes the function.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+from semantic_kernel.filters import FilterTypes
+from agentid_sk import agentid_filter
+
+@kernel.filter(FilterTypes.FUNCTION_INVOCATION)
+async def agentid_gate(context, next):
+    await agentid_filter("http://127.0.0.1:8092")(context, next)
+
+# PYTHONPATH=adapters/sk python your_agent.py`,
+    doc: `${docsRoot}sk-autogen-adapter.md`,
+  },
+  autogen: {
+    kicker: "SETUP · AUTOGEN CORE",
+    title: "Add a runtime intervention handler",
+    note: "The handler raises ToolException on denial and returns the message unchanged on allow. This is the Core-level seam; no AgentChat equivalent is claimed.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+from autogen_core import SingleThreadedAgentRuntime
+from agentid_autogen import AgentIDInterventionHandler
+
+runtime = SingleThreadedAgentRuntime(
+    intervention_handlers=[
+        AgentIDInterventionHandler("http://127.0.0.1:8092")
+    ]
+)
+
+# PYTHONPATH=adapters/autogen python your_agent.py`,
+    doc: `${docsRoot}sk-autogen-adapter.md`,
+  },
+  openai: {
+    kicker: "SETUP · OPENAI AGENTS SDK",
+    title: "Attach a tool-input guardrail",
+    note: "RunHooks are observational and cannot block. The blocking seam is tool_input_guardrail; the tool body does not change.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+from agentid_openai import attach_guardrail
+
+attach_guardrail(purchase_tool, "http://127.0.0.1:8092")
+
+# Or at definition time:
+# @tool(tool_input_guardrails=[agentid_tool_guardrail("http://127.0.0.1:8092")])
+# PYTHONPATH=adapters/openai python your_agent.py`,
+    doc: `${docsRoot}openai-adapter.md`,
+  },
+  n8n: {
+    kicker: "SETUP · N8N",
+    title: "Generate and import a gate sub-workflow",
+    note: "The IF true output goes to the real tool. The IF false output ends at Stop And Error, so a denied call never reaches the tool. The workflow carries no credentials.",
+    lang: "python",
+    code: `# Start the decision service once
+go run ./cmd/agentid hook-serve --config agentid.json --addr 127.0.0.1:8092
+
+import json
+from agentid_n8n import build_workflow
+
+print(json.dumps(build_workflow("http://127.0.0.1:8092", "purchase")))
+
+# Import the JSON into n8n, publish it, connect IF true to the real tool,
+# then attach with "Call n8n Workflow Tool".
+# PYTHONPATH=adapters/n8n python make_gate.py`,
+    doc: `${docsRoot}n8n-adapter.md`,
+  },
+};
+
+const adapterDoc = document.getElementById("adapter-doc") as HTMLAnchorElement | null;
+const adapterKicker = document.getElementById("adapter-kicker");
+const adapterTitle = document.getElementById("adapter-title");
+const adapterNote = document.getElementById("adapter-note");
+const adapterLang = document.getElementById("adapter-lang");
+const adapterCode = document.getElementById("adapter-code");
+
+function selectAdapter(id: string): void {
+  const setup = adapterSetups[id];
+  if (!setup) return;
+  document.querySelectorAll<HTMLButtonElement>(".adapter-pills button").forEach((button) => {
+    const active = button.dataset.adapter === id;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  if (adapterKicker) adapterKicker.textContent = setup.kicker;
+  if (adapterTitle) adapterTitle.textContent = setup.title;
+  if (adapterNote) adapterNote.textContent = setup.note;
+  if (adapterLang) adapterLang.textContent = setup.lang;
+  if (adapterCode) adapterCode.textContent = setup.code;
+  if (adapterDoc) adapterDoc.href = setup.doc;
+}
+
+document.querySelectorAll<HTMLButtonElement>(".adapter-pills button[data-adapter]").forEach((button) => {
+  button.addEventListener("click", () => selectAdapter(button.dataset.adapter ?? "mcp"));
+});
+selectAdapter("mcp");

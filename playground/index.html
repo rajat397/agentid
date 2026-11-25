@@ -201,9 +201,24 @@ agentid — the full lifecycle, running against real Go code
   <div class="wrap">
     <div id="adapters" class="adapters-block">
       <div class="sec-head"><span class="sec-num">06</span><h2>Bring your harness. It is just a tool call.</h2></div>
-      <p class="lead">One Go decision core. Adapters wrap the tool-call boundary without asking the agent to cooperate.</p>
-      <div class="adapter-pills">
-        <span>MCP</span><span>Claude Code</span><span>LangChain / LangGraph</span><span>Google ADK</span><span>CrewAI</span><span>Semantic Kernel</span><span>AutoGen</span><span>OpenAI Agents SDK</span><span>n8n</span>
+      <p class="lead">One Go decision core. Click a harness to get the exact setup you can paste into your project.</p>
+      <div class="adapter-pills" role="tablist" aria-label="Adapter setup">
+        <button type="button" class="active" data-adapter="mcp" role="tab" aria-selected="true">MCP</button>
+        <button type="button" data-adapter="claude" role="tab" aria-selected="false">Claude Code</button>
+        <button type="button" data-adapter="langchain" role="tab" aria-selected="false">LangChain / LangGraph</button>
+        <button type="button" data-adapter="adk" role="tab" aria-selected="false">Google ADK</button>
+        <button type="button" data-adapter="crewai" role="tab" aria-selected="false">CrewAI</button>
+        <button type="button" data-adapter="sk" role="tab" aria-selected="false">Semantic Kernel</button>
+        <button type="button" data-adapter="autogen" role="tab" aria-selected="false">AutoGen</button>
+        <button type="button" data-adapter="openai" role="tab" aria-selected="false">OpenAI Agents SDK</button>
+        <button type="button" data-adapter="n8n" role="tab" aria-selected="false">n8n</button>
+      </div>
+      <div class="adapter-panel">
+        <div class="adapter-head"><span class="mono" id="adapter-kicker">SETUP · MCP</span><a id="adapter-doc" href="https://github.com/rajat397/agentid/blob/main/docs/reference/mcp-transport-adapter.md">full guide →</a></div>
+        <h3 id="adapter-title">Wrap an MCP stdio server</h3>
+        <p id="adapter-note"></p>
+        <div class="adapter-code-bar"><span class="mono" id="adapter-lang">bash</span><button type="button" class="copy-btn" data-copy-source="adapter-code" aria-label="Copy adapter setup">copy</button></div>
+        <pre class="adapter-code mono" id="adapter-code"></pre>
       </div>
     </div>
     <div class="evidence-grid">
