@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>agentid — authority you can re-derive, not re-trust</title>
-<meta name="description" content="A Go reference implementation of agent identity: canonical action envelopes, a credential-holding PEP, deterministic validation, signed receipts, revocation, anchoring and evidence bundles you can verify offline." />
+<title>agentid — prove who authorized an agent action</title>
+<meta name="description" content="agentid binds a signed envelope to every consequential agent action, gates it at a credential-holding enforcement point, and emits evidence an auditor can re-derive offline." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%232DD4BF' d='M50 4 88 18v28c0 24-16 40-38 50C28 86 12 70 12 46V18z'/><path fill='%230A0E14' d='M44 62 28 46l7-7 9 9 21-21 7 7z'/></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/src/style.css?v=5">
+<link rel="stylesheet" href="/src/style.css?v=6">
 </head>
 <body>
 
@@ -17,11 +17,11 @@
   <div class="hbar">
     <a class="logo" href="#top">agent<em>id</em></a>
     <nav aria-label="Primary">
-      <a href="#system">The system</a>
+      <a href="#system">Why</a>
       <a href="#proof">Proof</a>
-      <a href="#flow">Follow a flow</a>
-      <a href="#run">Run it</a>
-      <a href="#evidence">Evidence</a>
+      <a href="#flow">Flow</a>
+      <a href="#run">Run</a>
+      <a href="#adapters">Adapters</a>
     </nav>
     <a class="gh-btn" href="https://github.com/rajat397/agentid">GitHub ↗</a>
   </div>
@@ -30,71 +30,55 @@
 <!-- HERO -->
 <section class="hero-split" id="top">
   <div class="hero-copy">
-    <div class="eyebrow"><span class="dot"></span> Go 1.27 · all rights reserved · reference implementation</div>
+    <div class="eyebrow"><span class="dot"></span> All rights reserved · Go 1.27 · reference implementation</div>
     <h1>
       <span class="hline">An agent acted.</span>
       <span class="hline"><span class="grad">Prove who authorized it.</span></span>
     </h1>
-    <p class="sub">Tokens answer <em>who</em>. agentid answers <em>which agent, on whose behalf, under which exact constraints — and produces evidence a third party can re-derive offline</em>. No vendor service in the verification path.</p>
+    <p class="sub">Tokens answer <em>who</em>. agentid answers <em>which agent, on whose behalf, under which exact constraints</em>, and emits evidence an auditor re-derives offline. No vendor service in the verification path.</p>
     <div class="hero-ctas">
-      <a class="btn primary" href="#proof">See the proof →</a>
-      <a class="btn ghost" href="#run">Run it locally</a>
-      <a class="btn ghost" href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">Standards matrix</a>
+      <a class="btn primary" href="#run">Get started <span aria-hidden="true">→</span></a>
+      <a class="btn ghost" href="#flow">Watch the flow</a>
     </div>
+    <div class="hero-cmd mono"><span class="prompt">$</span><code id="hero-cmd">go run ./cmd/agentid demo</code><button type="button" class="copy-btn" data-copy="go run ./cmd/agentid demo" aria-label="Copy command">copy</button></div>
     <div class="hero-meta mono">
-      <span><b>142</b> tests</span><span><b>0</b> hosted services</span><span><b>7</b> predicate types</span><span><b>ES256 + ML-DSA-65</b></span>
+      <span><b>142</b> tests</span><span><b>8</b> adapters</span><span><b>23</b> pinned vectors</span>
     </div>
   </div>
 
-  <div class="hero-diagram" role="img" aria-label="A human signs a narrow delegation; an enforcement point holds credentials and gates tool calls; a validator and control plane decide; receipts, status lists, anchors and telemetry become an evidence bundle.">
-    <svg viewBox="0 0 520 560" class="chain-svg" aria-hidden="true">
-      <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#46536B"/></marker>
-        <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#34D399"/></marker>
-        <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#F87171"/></marker>
-      </defs>
-      <g class="node node-human"><rect x="160" y="8" width="200" height="56" rx="12"/><text x="260" y="33" class="n-title">Principal</text><text x="260" y="51" class="n-sub mono">human · IdP · attested workload</text></g>
-      <line x1="260" y1="64" x2="260" y2="128" class="edge" marker-end="url(#arrow)"/>
-      <text x="274" y="90" class="edge-label mono">signs envelope</text>
-      <text x="274" y="105" class="edge-detail mono">action · system · typed predicates</text>
-      <text x="274" y="119" class="edge-detail mono">aud · stage · provenance · expiry</text>
-      <g class="node node-agent"><rect x="150" y="132" width="220" height="56" rx="12"/><text x="260" y="157" class="n-title">PEP / MCP wrapper</text><text x="260" y="175" class="n-sub mono">holds credentials · agent never does</text></g>
-      <line x1="260" y1="188" x2="260" y2="252" class="edge" marker-end="url(#arrow)"/>
-      <text x="274" y="214" class="edge-label mono">validates locally</text>
-      <text x="274" y="229" class="edge-detail mono">deny-overrides · signed approvals</text>
-      <text x="274" y="243" class="edge-detail mono">revocation · control-plane cache</text>
-      <g class="node node-sub"><rect x="150" y="256" width="220" height="56" rx="12"/><text x="260" y="281" class="n-title">Validator + evidence</text><text x="260" y="299" class="n-sub mono">receipt · status · anchor · spans</text></g>
-      <g class="outcome">
-        <line x1="230" y1="312" x2="140" y2="368" class="edge edge-red" marker-end="url(#arrow-red)"/>
-        <rect x="14" y="372" width="240" height="70" rx="10" class="chip chip-red"/>
-        <text x="26" y="397" class="chip-title red mono">✗ DENIED</text>
-        <text x="26" y="416" class="chip-sub mono">constraint breach or stale policy</text>
-        <text x="26" y="433" class="chip-sub mono">receipt + approval request</text>
-      </g>
-      <g class="outcome">
-        <line x1="290" y1="312" x2="380" y2="368" class="edge edge-green" marker-end="url(#arrow-green)"/>
-        <rect x="266" y="372" width="240" height="70" rx="10" class="chip chip-green"/>
-        <text x="278" y="397" class="chip-title green mono">✓ ALLOWED</text>
-        <text x="278" y="416" class="chip-sub mono">downstream call with held credential</text>
-        <text x="278" y="433" class="chip-sub mono">signed, hash-chained receipt</text>
-      </g>
-      <text x="260" y="492" class="invariant mono">NO TTP IN VERIFICATION · RE-DERIVABLE FROM ARTIFACTS</text>
-      <text x="260" y="514" class="invariant-sub">the auditor needs the bundle and the public key — not our service</text>
-    </svg>
+  <div class="hero-diagram" role="img" aria-label="A decision ledger for one action: principal, delegation, enforcement point, two outcomes, and an offline verification invariant.">
+    <div class="ledger">
+      <div class="ledger-top"><span class="ledger-dot"></span><span class="mono">decision ledger · one action</span><span class="ledger-state mono">RECEIPTED</span></div>
+      <div class="ledger-row"><span>PRINCIPAL</span><b>oidc|acme-retail|usr_8842</b></div>
+      <div class="ledger-row"><span>DELEGATION</span><b>dlg_1939a3588a4b5e4a</b></div>
+      <div class="ledger-row"><span>ENVELOPE</span><b>ads.purchase · meta-ads · 2000 EUR</b></div>
+      <div class="ledger-row"><span>POLICY</span><b>deny-overrides · co-sign above 500</b></div>
+      <div class="ledger-outcomes">
+        <div class="ledger-chip denied"><b>✗ DENIED</b><span>over-cap action · receipt + approval request</span></div>
+        <div class="ledger-chip allowed"><b>✓ ALLOWED</b><span>within authority · signed hash-chained receipt</span></div>
+      </div>
+      <div class="ledger-foot mono">NO TTP IN VERIFICATION · RE-DERIVE FROM ARTIFACTS</div>
+    </div>
   </div>
 </section>
 
-<!-- SYSTEM -->
+<section class="stats-band" aria-label="Project facts">
+  <div class="stat"><span class="stat-val">142</span><span class="stat-desc">Go tests, race-clean and fuzzed</span></div>
+  <div class="stat"><span class="stat-val">8</span><span class="stat-desc">harness adapters, one CLI core</span></div>
+  <div class="stat"><span class="stat-val">23</span><span class="stat-desc">pinned cross-language vectors</span></div>
+  <div class="stat"><span class="stat-val">0</span><span class="stat-desc">hosted services in verification</span></div>
+</section>
+
+<!-- WHY -->
 <section id="system">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">01</span><h2>The system that actually ships</h2></div>
-    <p class="lead">Five working layers, all in a Go 1.27 standard-library core. Everything below has a test, a CLI path and a document in the repository.</p>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Every agent has an identity, but no ambient authority.</h2></div>
+    <p class="lead">agentid separates the agent that reasons from the boundary that decides. The decision is deterministic, the credentials stay at the boundary, and the evidence survives the agent.</p>
     <div class="map-grid">
-      <article class="map-card"><div class="map-k mono">01 · ENVELOPE</div><h3>Canonical action</h3><p>A digest of <code>action, system, resource, attributes</code> is the unit of approval, validation and receipt. Seven typed predicates cover amounts, enumeration, windows, rolling sums, co-sign, equality and bounds.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/constraints.md">constraints →</a></article>
-      <article class="map-card"><div class="map-k mono">02 · PEP</div><h3>MCP wrapper holds the key</h3><p>The agent sees JSON-RPC tools, never credentials. Authority fields come from operator mapping, not tool arguments. Denials return <code>-32000</code> with a receipt id and an approval request when applicable.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/mcp-wrapper.md">wrapper →</a></article>
-      <article class="map-card"><div class="map-k mono">03 · DECISION</div><h3>Deterministic &amp; dual-signed</h3><p>Deny-overrides across profiles, implicit deny, canonical obligation union. Delegations and receipts carry ES256 primary plus ML-DSA-65 post-quantum signatures; approvals must be signed by the approver.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/policy-combining.md">combining →</a></article>
-      <article class="map-card"><div class="map-k mono">04 · EVIDENCE</div><h3>Bundle, anchors, telemetry</h3><p>Signed receipts, status lists, customer-chosen anchors, five OTel spans and signer keys travel in one offline-verifiable bundle. A mismatch metric corroborates telemetry against receipts.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/evidence-bundle.md">bundle →</a></article>
-      <article class="map-card"><div class="map-k mono">05 · OPERATIONS</div><h3>Lifecycle, not just issuance</h3><p>SCIM deprovisioning revokes in bounded time; erasure executors emit deletion receipts; retention archives before pruning; control-plane policy bundles fail closed when stale.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/control-plane.md">control plane →</a></article>
+      <article class="map-card"><div class="cap-top"><span class="cap-pill blue">Identity</span></div><h3>Distinct agent identity</h3><p>A signed delegation chain names the actor, audience, exact permissions, expiry and attestation. Each hop can only narrow the parent grant.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/key-chain.md">key chain →</a></article>
+      <article class="map-card"><div class="cap-top"><span class="cap-pill amber">No credentials</span></div><h3>Credential-holding PEP</h3><p>The MCP wrapper holds downstream secrets. The agent sees tools and arguments, never the credential that executes them.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/mcp-wrapper.md">wrapper →</a></article>
+      <article class="map-card"><div class="cap-top"><span class="cap-pill pink">No widening</span></div><h3>Deterministic decision</h3><p>Deny-overrides across profiles, implicit deny, typed predicates, budgets, stage ceilings and provenance taint. No model judgment in the verdict.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/policy-combining.md">decision →</a></article>
+      <article class="map-card"><div class="cap-top"><span class="cap-pill green">No re-trust</span></div><h3>Offline-verifiable evidence</h3><p>Receipts, status lists, anchors, OTel spans and signer keys travel in one bundle. The auditor checks the math, not our service.</p><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/evidence-bundle.md">bundle →</a></article>
     </div>
   </div>
 </section>
@@ -106,7 +90,7 @@
     <div class="path-grid">
       <a class="path-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md"><span class="path-k mono">STANDARDS REVIEWER</span><h3>Claim → source → code</h3><p>Every NIST/IETF statement mapped to what is implemented and what is not, with the audit trail of our own corrections.</p><span class="path-arrow mono">read the matrix →</span></a>
       <a class="path-card" href="#run"><span class="path-k mono">DEVELOPER</span><h3>Running code in five minutes</h3><p>Clone, <code>go test ./...</code>, run the CLI, inspect a real receipt. No cloud account, no SDK, no hosted service.</p><span class="path-arrow mono">run it →</span></a>
-      <a class="path-card" href="https://github.com/rajat397/agentid/blob/main/docs/PILOT-PROGRAM.md"><span class="path-k mono">OPERATOR / AUDITOR</span><h3>Threat model and pilot gates</h3><p>Ten threats, control mappings, executable mutants, and measurable success criteria for three design partners.</p><span class="path-arrow mono">read the pilot plan →</span></a>
+      <a class="path-card" href="https://github.com/rajat397/agentid/blob/main/README.md#pilot-bar"><span class="path-k mono">OPERATOR / AUDITOR</span><h3>Threat model and pilot gates</h3><p>Ten threats, control mappings, executable mutants, and measurable success criteria for three design partners.</p><span class="path-arrow mono">read the pilot plan →</span></a>
     </div>
   </div>
 </section>
@@ -212,22 +196,39 @@ agentid — the full lifecycle, running against real Go code
   </div>
 </section>
 
-<!-- EVIDENCE -->
+<!-- ADAPTERS + EVIDENCE -->
 <section id="evidence">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">06</span><h2>Don't re-trust — re-derive</h2></div>
-    <p class="lead">The decision, the evidence and the verification travel together. That is the entire point; the interface is incidental.</p>
-    <div class="why-now"><div class="ev-k mono">WHY NOW</div><p>NIST's <a href="https://www.nccoe.nist.gov/">NCCoE</a> concept paper (February 2026) frames agent identity, authorization and audit for federal and critical-infrastructure use. SP 800-63-4 explicitly excludes agents; NISTIR 8587 names the risk. agentid is one runnable public answer — check the <a href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">standards matrix</a> and the <a href="https://github.com/rajat397/agentid/blob/main/docs/security/threat-model.md">threat model</a>.</p></div>
+    <div id="adapters" class="adapters-block">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Bring your harness. It is just a tool call.</h2></div>
+      <p class="lead">One Go decision core. Adapters wrap the tool-call boundary without asking the agent to cooperate.</p>
+      <div class="adapter-pills">
+        <span>MCP</span><span>Claude Code</span><span>LangChain / LangGraph</span><span>Google ADK</span><span>CrewAI</span><span>Semantic Kernel</span><span>AutoGen</span><span>OpenAI Agents SDK</span><span>n8n</span>
+      </div>
+    </div>
     <div class="evidence-grid">
-      <a class="ev-card" href="https://github.com/rajat397/agentid"><div class="ev-k mono">REPOSITORY</div><div class="ev-t">github.com/rajat397/agentid</div><div class="ev-d">All rights reserved. Go 1.27 standard-library core. 142 tests, race-clean, fuzzed parsers. Read the hardening report before you deploy anything.</div><div class="ev-arrow mono">→</div></a>
-      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/HARDENING-REPORT.md"><div class="ev-k mono">HONEST LIMITS</div><div class="ev-t">Hardening report</div><div class="ev-d">68.5% measured coverage; CMS chain verification and second-language PQ verification stated as unresolved, not hidden.</div><div class="ev-arrow mono">→</div></a>
-      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/PILOT-PROGRAM.md"><div class="ev-k mono">PILOTS</div><div class="ev-t">Three design partners</div><div class="ev-d">Ten measurable gates, including no-TTP verification and bounded SCIM revocation. Execution pending operator outreach.</div><div class="ev-arrow mono">→</div></a>
-      <div class="ev-card static"><div class="ev-k mono">THIS PAGE</div><div class="ev-t">Static build of real commands</div><div class="ev-d">Every captured block is regenerated from the Go CLI on deploy. No mock output, no fictional screenshots.</div></div>
+      <a class="ev-card" href="https://github.com/rajat397/agentid"><div class="ev-k mono">REPOSITORY</div><div class="ev-t">github.com/rajat397/agentid</div><div class="ev-d">All rights reserved. Go 1.27 standard-library core. 142 tests, race-clean parsers, fuzz targets, no external Go modules.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md"><div class="ev-k mono">STANDARDS</div><div class="ev-t">Claim → source → code</div><div class="ev-d">Every NIST/IETF statement mapped to what is implemented and what is not, with our own corrections recorded.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/hardening.md"><div class="ev-k mono">HONEST LIMITS</div><div class="ev-t">Hardening report</div><div class="ev-d">Measured coverage, fuzz results, and unresolved CMS chain and second-language PQ verification stated plainly.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/README.md#pilot-bar"><div class="ev-k mono">PILOTS</div><div class="ev-t">Activation bar</div><div class="ev-d">One live tool path. 50 receipts per week for two weeks. Ten measurable gates, no hand-waving.</div><div class="ev-arrow mono">→</div></a>
+    </div>
+    <div class="community-band">
+      <div class="community-intro"><h3>Read the source, not the pitch.</h3><span>Everything on this page is regenerated from the Go CLI on deploy.</span></div>
+      <a href="https://github.com/rajat397/agentid"><b>GitHub</b><span>rajat397/agentid</span></a>
+      <a href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md"><b>Standards matrix</b><span>claims checked against source</span></a>
+      <a href="https://github.com/rajat397/agentid/blob/main/docs/security/threat-model.md"><b>Threat model</b><span>ten threats, control mappings</span></a>
     </div>
   </div>
 </section>
 
-<footer class="site-footer"><div class="wrap mono">agentid · authority you can re-derive · all rights reserved · <a href="https://github.com/rajat397/agentid">source</a></div></footer>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div><a class="logo" href="#top">agent<em>id</em></a><p>Prove who authorized an agent action.</p><span>All rights reserved.</span></div>
+    <div><b>Docs</b><a href="https://github.com/rajat397/agentid#readme">README</a><a href="https://github.com/rajat397/agentid/blob/main/docs/architecture/overview.md">Architecture</a><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/evidence-bundle.md">Evidence bundle</a></div>
+    <div><b>Review</b><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">Standards matrix</a><a href="https://github.com/rajat397/agentid/blob/main/docs/security/threat-model.md">Threat model</a><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/hardening.md">Hardening report</a></div>
+    <div><b>Project</b><a href="https://github.com/rajat397/agentid">Source</a><a href="https://github.com/rajat397/agentid/blob/main/README.md#pilot-bar">Pilot program</a><a href="https://github.com/rajat397/agentid/blob/main/LICENSE">License</a></div>
+  </div>
+</footer>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

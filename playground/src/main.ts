@@ -283,3 +283,21 @@ const header = document.getElementById("site-header");
 const onScroll = () => header?.classList.toggle("scrolled", window.scrollY > 24);
 window.addEventListener("scroll", onScroll, { passive: true });
 onScroll();
+
+/* ── copyable commands ─────────────────────────────────────────── */
+document.querySelectorAll<HTMLButtonElement>("button[data-copy]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const value = button.dataset.copy ?? "";
+    try {
+      await navigator.clipboard.writeText(value);
+      button.textContent = "copied";
+      button.classList.add("copied");
+      window.setTimeout(() => {
+        button.textContent = "copy";
+        button.classList.remove("copied");
+      }, 1400);
+    } catch {
+      button.textContent = "select";
+    }
+  });
+});
