@@ -186,6 +186,8 @@ Every claim this repository makes about a standard was checked against the norma
 - **Policy-set combining** — profile-pinned deny-overrides across multiple
   profiles with canonical obligation union and implicit deny. See
   [reference/policy-combining.md](docs/reference/policy-combining.md).
+- **CrewAI adapter** — global `PRE_TOOL_CALL` hook that fails closed through
+  `HookAborted`. See [reference/crewai-adapter.md](docs/reference/crewai-adapter.md).
 - **Google ADK adapter** — one `before_tool_callback` per agent, backed by the
   local decision service. See [reference/adk-adapter.md](docs/reference/adk-adapter.md).
 - **LangChain/LangGraph adapter** — one middleware line around every tool call,
