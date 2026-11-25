@@ -42,7 +42,7 @@
     </div>
     <div class="hero-cmd mono"><span class="prompt">$</span><code id="hero-cmd">go run ./cmd/agentid demo</code><button type="button" class="copy-btn" data-copy="go run ./cmd/agentid demo" aria-label="Copy command">copy</button></div>
     <div class="hero-meta mono">
-      <span><b>142</b> tests</span><span><b>8</b> adapters</span><span><b>23</b> pinned vectors</span>
+      <span><b>8</b> adapters</span><span><b>0</b> hosted services</span><span><b>offline</b> verification</span>
     </div>
   </div>
 
@@ -63,10 +63,10 @@
 </section>
 
 <section class="stats-band" aria-label="Project facts">
-  <div class="stat"><span class="stat-val">142</span><span class="stat-desc">Go tests, race-clean and fuzzed</span></div>
   <div class="stat"><span class="stat-val">8</span><span class="stat-desc">harness adapters, one CLI core</span></div>
-  <div class="stat"><span class="stat-val">23</span><span class="stat-desc">pinned cross-language vectors</span></div>
   <div class="stat"><span class="stat-val">0</span><span class="stat-desc">hosted services in verification</span></div>
+  <div class="stat"><span class="stat-val">2</span><span class="stat-desc">signatures per receipt: ES256 + ML-DSA-65</span></div>
+  <div class="stat"><span class="stat-val">1</span><span class="stat-desc">portable bundle, verified offline</span></div>
 </section>
 
 <!-- WHY -->
@@ -222,10 +222,10 @@ agentid — the full lifecycle, running against real Go code
       </div>
     </div>
     <div class="evidence-grid">
-      <a class="ev-card" href="https://github.com/rajat397/agentid"><div class="ev-k mono">REPOSITORY</div><div class="ev-t">github.com/rajat397/agentid</div><div class="ev-d">All rights reserved. Go 1.27 standard-library core. 142 tests, race-clean parsers, fuzz targets, no external Go modules.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid"><div class="ev-k mono">REPOSITORY</div><div class="ev-t">github.com/rajat397/agentid</div><div class="ev-d">All rights reserved. Go 1.27 standard-library core, signed receipts, offline verification, no external Go modules.</div><div class="ev-arrow mono">→</div></a>
       <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md"><div class="ev-k mono">STANDARDS</div><div class="ev-t">Claim → source → code</div><div class="ev-d">Every NIST/IETF statement mapped to what is implemented and what is not, with our own corrections recorded.</div><div class="ev-arrow mono">→</div></a>
-      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/hardening.md"><div class="ev-k mono">HONEST LIMITS</div><div class="ev-t">Hardening report</div><div class="ev-d">Measured coverage, fuzz results, and unresolved CMS chain and second-language PQ verification stated plainly.</div><div class="ev-arrow mono">→</div></a>
-      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/README.md#pilot-bar"><div class="ev-k mono">PILOTS</div><div class="ev-t">Activation bar</div><div class="ev-d">One live tool path. 50 receipts per week for two weeks. Ten measurable gates, no hand-waving.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/hardening.md"><div class="ev-k mono">HONEST LIMITS</div><div class="ev-t">Hardening report</div><div class="ev-d">Coverage gaps, unresolved CMS chain verification and second-language PQ limits stated plainly.</div><div class="ev-arrow mono">→</div></a>
+      <a class="ev-card" href="https://github.com/rajat397/agentid/blob/main/docs/reference/verification-api.md"><div class="ev-k mono">VERIFICATION API</div><div class="ev-t">Check it yourself</div><div class="ev-d">Mount /receipts/verify and /v1/keys so a third party can verify decisions without calling us.</div><div class="ev-arrow mono">→</div></a>
     </div>
     <div class="community-band">
       <div class="community-intro"><h3>Read the source, not the pitch.</h3><span>Everything on this page is regenerated from the Go CLI on deploy.</span></div>
@@ -241,7 +241,7 @@ agentid — the full lifecycle, running against real Go code
     <div><a class="logo" href="#top">agent<em>id</em></a><p>Prove who authorized an agent action.</p><span>All rights reserved.</span></div>
     <div><b>Docs</b><a href="https://github.com/rajat397/agentid#readme">README</a><a href="https://github.com/rajat397/agentid/blob/main/docs/architecture/overview.md">Architecture</a><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/evidence-bundle.md">Evidence bundle</a></div>
     <div><b>Review</b><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/standards-matrix.md">Standards matrix</a><a href="https://github.com/rajat397/agentid/blob/main/docs/security/threat-model.md">Threat model</a><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/hardening.md">Hardening report</a></div>
-    <div><b>Project</b><a href="https://github.com/rajat397/agentid">Source</a><a href="https://github.com/rajat397/agentid/blob/main/README.md#pilot-bar">Pilot program</a><a href="https://github.com/rajat397/agentid/blob/main/LICENSE">License</a></div>
+    <div><b>Project</b><a href="https://github.com/rajat397/agentid">Source</a><a href="https://github.com/rajat397/agentid/blob/main/docs/reference/verification-api.md">Verification API</a><a href="https://github.com/rajat397/agentid/blob/main/LICENSE">License</a></div>
   </div>
 </footer>
 <script type="module" src="/src/main.ts"></script>

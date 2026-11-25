@@ -50,7 +50,7 @@ go test ./...
 go run ./cmd/agentid demo
 ```
 
-The demo runs the same code the tests exercise: a human grants authority, an over-cap action is denied with a receipt, an allowed action is receipted, four audit questions are answered from receipts alone, and a tampered receipt fails verification.
+The demo runs the full lifecycle: a human grants authority, an over-cap action is denied with a receipt, an allowed action is receipted, four audit questions are answered from receipts alone, and a tampered receipt fails verification.
 
 ### 3. Export and verify evidence
 
@@ -119,22 +119,18 @@ go run ./cmd/agentid claude-hook
 | [reference/otel-evidence.md](docs/reference/otel-evidence.md) | Correlate five spans with receipts and raise `agentid.mismatch` |
 | [reference/erasure-executor.md](docs/reference/erasure-executor.md) | Execute and receipt deletion across systems |
 | [reference/long-horizon-evidence.md](docs/reference/long-horizon-evidence.md) | Anchor the ledger head with RFC 3161 or customer keys |
-| [reference/hardening.md](docs/reference/hardening.md) | Read measured coverage, fuzz results and unresolved gaps |
-| [reference/control-plane.md](docs/reference/control-plane.md) | See caller-owned policy bundles, fail-closed caches and pilot surface |
+| [reference/hardening.md](docs/reference/hardening.md) | Read coverage gaps and unresolved verification limits |
+| [reference/control-plane.md](docs/reference/control-plane.md) | See caller-owned policy bundles and fail-closed cache behavior |
 
 ## Evidence, not adjectives
 
-142 Go tests, race-clean parsers, fuzz targets, 23 pinned cross-language vectors and a frozen Python conformance oracle. Delegations and receipts carry ES256 and ML-DSA-65 signatures; the Go verifier checks both. The Python oracle reports `PARTIAL` for PQ signatures by design.
+Delegations and receipts carry ES256 and ML-DSA-65 signatures; the Go verifier checks both offline. A frozen conformance oracle remains in the repository as a development check, not as a second supported implementation.
 
 Every claim about a standard is checked against the normative text in [reference/standards-matrix.md](docs/reference/standards-matrix.md), with the audit trail and our own corrections in [reference/verification-log.md](docs/reference/verification-log.md).
 
 ## Limits
 
 Not tamper-proof storage: receipts are tamper-evident. Not a certified product. Not a substitute for your own threat model: see [security/threat-model.md](docs/security/threat-model.md). CMS chain verification and second-language PQ verification remain unresolved; see [reference/hardening.md](docs/reference/hardening.md).
-
-## Pilot bar
-
-One live tool path. 50 receipts per week for two weeks. The only success signal is an operator who can wire an existing MCP path and re-derive the decision from the bundle without calling us.
 
 ## Contact
 
