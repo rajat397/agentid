@@ -186,6 +186,8 @@ Every claim this repository makes about a standard was checked against the norma
 - **Policy-set combining** — profile-pinned deny-overrides across multiple
   profiles with canonical obligation union and implicit deny. See
   [reference/policy-combining.md](docs/reference/policy-combining.md).
+- **n8n adapter** — importable gate sub-workflow with a deny branch that stops
+  before the tool. See [reference/n8n-adapter.md](docs/reference/n8n-adapter.md).
 - **OpenAI Agents SDK adapter** — tool-input guardrail that blocks execution,
   attached in one line without editing tools. See
   [reference/openai-adapter.md](docs/reference/openai-adapter.md).
