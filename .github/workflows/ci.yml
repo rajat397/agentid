@@ -39,6 +39,8 @@ jobs:
         run: |
           PYTHONPATH=adapters/sk python3 -m pytest adapters/sk/tests -q
           PYTHONPATH=adapters/autogen python3 -m pytest adapters/autogen/tests -q
+      - name: OpenAI Agents SDK adapter tests
+        run: PYTHONPATH=adapters/openai python3 -m pytest adapters/openai/tests -q
       - name: cross-language signature verification
         run: |
           go run ./tools/crosstest > /tmp/cross-artifact.json
