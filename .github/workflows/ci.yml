@@ -31,6 +31,8 @@ jobs:
           cd tools/py-reference && python -m pytest -q
       - name: LangChain adapter tests
         run: PYTHONPATH=adapters/langchain python3 -m pytest adapters/langchain/tests -q
+      - name: ADK adapter tests
+        run: PYTHONPATH=adapters/adk python3 -m pytest adapters/adk/tests -q
       - name: cross-language signature verification
         run: |
           go run ./tools/crosstest > /tmp/cross-artifact.json

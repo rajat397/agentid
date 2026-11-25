@@ -186,6 +186,8 @@ Every claim this repository makes about a standard was checked against the norma
 - **Policy-set combining** — profile-pinned deny-overrides across multiple
   profiles with canonical obligation union and implicit deny. See
   [reference/policy-combining.md](docs/reference/policy-combining.md).
+- **Google ADK adapter** — one `before_tool_callback` per agent, backed by the
+  local decision service. See [reference/adk-adapter.md](docs/reference/adk-adapter.md).
 - **LangChain/LangGraph adapter** — one middleware line around every tool call,
   backed by the local Go decision service. See
   [reference/langchain-adapter.md](docs/reference/langchain-adapter.md).
