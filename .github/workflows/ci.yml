@@ -35,6 +35,10 @@ jobs:
         run: PYTHONPATH=adapters/adk python3 -m pytest adapters/adk/tests -q
       - name: CrewAI adapter tests
         run: PYTHONPATH=adapters/crewai python3 -m pytest adapters/crewai/tests -q
+      - name: SK and AutoGen adapter tests
+        run: |
+          PYTHONPATH=adapters/sk python3 -m pytest adapters/sk/tests -q
+          PYTHONPATH=adapters/autogen python3 -m pytest adapters/autogen/tests -q
       - name: cross-language signature verification
         run: |
           go run ./tools/crosstest > /tmp/cross-artifact.json
