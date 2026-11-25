@@ -429,3 +429,49 @@ body.has-3d .journey-2d .sequence { max-height: 300px; overflow: auto; }
   .ledger-outcomes { grid-template-columns: 1fr; }
   .community-band, .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* ── compact flow for split-screen widths ── */
+@media (max-width: 980px) {
+  .journey-stage { display: flex; flex-direction: column; gap: .9rem; }
+  .journey-3d { display: none !important; }
+  .journey-2d { order: 1; width: 100%; }
+  .flow-detail { order: 2; position: static; width: 100%; }
+  .journey-progress { overflow-x: auto; }
+  .progress-dot { flex: 0 0 30px; }
+
+  .sequence {
+    display: flex;
+    overflow-x: auto;
+    gap: .6rem;
+    padding: .65rem;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-2) transparent;
+  }
+  .sequence::-webkit-scrollbar { height: 6px; }
+  .sequence::-webkit-scrollbar-track { background: transparent; }
+  .sequence::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
+  .sequence::-webkit-scrollbar-thumb:hover { background: var(--dim-2); }
+  .sequence-step {
+    flex: 0 0 210px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "actor index" "body body";
+    gap: .35rem .6rem;
+    align-items: start;
+    scroll-snap-align: start;
+  }
+  .seq-actor { grid-area: actor; }
+  .seq-track { display: none; }
+  .seq-body { grid-area: body; }
+  .seq-index { grid-area: index; }
+  .seq-detail { display: none; }
+  .seq-title { font-size: .86rem; line-height: 1.35; }
+
+  .flow-detail { padding: 1.1rem; }
+  .fd-artifact { max-height: 220px; }
+}
+@media (max-width: 560px) {
+  .sequence-step { flex-basis: 180px; }
+  .journey-controls .flow-btn { flex: 1 1 auto; }
+}
