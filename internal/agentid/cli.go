@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -36,6 +37,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return cmdProfile(stdout)
 	case "demo":
 		return cmdDemo(stdout, stderr)
+	case "quickstart":
+		return cmdQuickstart(args[1:], stdout, stderr)
 	case "erasure":
 		return cmdErasure(args[1:], stdout)
 	case "anchor":
@@ -189,6 +192,41 @@ func cmdDemo(stdout, stderr io.Writer) int {
 	problems := bundle.ledger.VerifyChain(bundle.ledger.SignerKeys)
 	fmt.Fprintf(stdout, "5. Tampered receipt: signatures + hash chain verify: %t (%s)\n",
 		len(problems) == 0, firstProblem(problems))
+	return 0
+}
+
+func cmdQuickstart(args []string, stdout, stderr io.Writer) int {
+	outDir := ""
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--out" && i+1 < len(args) {
+			i++
+			outDir = args[i]
+		}
+	}
+	if outDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 1
+		}
+		outDir = filepath.Join(home, ".agentid", "quickstart")
+	}
+
+	result, err := RunQuickstart(outDir, "")
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if !result.Verified {
+		fmt.Fprintln(stderr, "offline verification failed")
+		return 1
+	}
+	fmt.Fprintf(stdout, "first receipt: %s\n", result.FirstReceipt)
+	fmt.Fprintf(stdout, "blocked calls: %d\n", result.BlockedCalls)
+	fmt.Fprintf(stdout, "downstream executed: %d call(s)\n", result.DownstreamCallsAllowed)
+	fmt.Fprintf(stdout, "bundle: %s\n", result.BundlePath)
+	fmt.Fprintln(stdout, "verify: offline VERIFIED")
+	fmt.Fprintf(stdout, "elapsed: %s\n", result.Elapsed.Truncate(time.Millisecond))
 	return 0
 }
 

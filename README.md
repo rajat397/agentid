@@ -41,16 +41,15 @@ Go 1.27 is required for `crypto/mldsa` in the standard library. No external Go m
 go version
 ```
 
-### 2. Run the lifecycle
+### 2. Get to the first verified receipt
 
 ```bash
 git clone https://github.com/rajat397/agentid.git
 cd agentid
-go test ./...
-go run ./cmd/agentid demo
+go run ./cmd/agentid quickstart --out ./quickstart
 ```
 
-The demo runs the full lifecycle: a human grants authority, an over-cap action is denied with a receipt, an allowed action is receipted, four audit questions are answered from receipts alone, and a tampered receipt fails verification.
+The quickstart runs a real MCP HTTP path: a credential-holding PEP blocks an over-cap tool call, allows an approved tool call, exports both receipts into a bundle and verifies them offline. `go run ./cmd/agentid demo` shows the full lifecycle including tamper detection.
 
 ### 3. Export and verify evidence
 
@@ -110,6 +109,7 @@ The commercial operator build adds `config`, `health` and `key` commands with `-
 
 | Guide | Read it to... |
 |---|---|
+| [reference/quickstart.md](docs/reference/quickstart.md) | Get from cold clone to an offline-verified receipt |
 | [architecture/overview.md](docs/architecture/overview.md) | Understand components, constraints, flows and open questions |
 | [reference/standards-matrix.md](docs/reference/standards-matrix.md) | Check every NIST/IETF claim against the normative text |
 | [reference/constraints.md](docs/reference/constraints.md) | Write action envelopes, predicates and stage ceilings |
