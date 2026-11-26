@@ -75,11 +75,16 @@ The agent sees ordinary JSON-RPC tools. The wrapper holds downstream credentials
 ```bash
 # Inspect and verify
 go run ./cmd/agentid profile
+go run ./cmd/agentid config check --config spec/operator-config.example.json
+go run ./cmd/agentid health --config spec/operator-config.example.json
 go run ./cmd/agentid evidence export --demo --out bundle.json
 go run ./cmd/agentid evidence verify --file bundle.json
 go run ./cmd/agentid verify-signed --artifact <file>
 
 # Lifecycle and operations
+go run ./cmd/agentid key generate --dir keys --kid kid-one
+go run ./cmd/agentid key rotate --dir keys --kid kid-two
+go run ./cmd/agentid key publish --dir keys --out public-keys.json
 go run ./cmd/agentid demo
 go run ./cmd/agentid erasure cust_4471 --demo
 go run ./cmd/agentid anchor --ledger <receipts.jsonl> [--tsa URL]
@@ -120,7 +125,9 @@ go run ./cmd/agentid claude-hook
 | [reference/erasure-executor.md](docs/reference/erasure-executor.md) | Execute and receipt deletion across systems |
 | [reference/long-horizon-evidence.md](docs/reference/long-horizon-evidence.md) | Anchor the ledger head with RFC 3161 or customer keys |
 | [reference/hardening.md](docs/reference/hardening.md) | Read coverage gaps and unresolved verification limits |
-| [reference/control-plane.md](docs/reference/control-plane.md) | See caller-owned policy bundles and fail-closed cache behavior |
+| [reference/operator-config.md](docs/reference/operator-config.md) | Validate JSON config, health and shadow mode |
+| [reference/key-lifecycle.md](docs/reference/key-lifecycle.md) | Generate, rotate and publish local signer keys |
+| [reference/install.md](docs/reference/install.md) | Verify and install signed release binaries |
 
 ## Evidence, not adjectives
 
@@ -140,4 +147,4 @@ Not tamper-proof storage: receipts are tamper-evident. Not a certified product. 
 
 ## License
 
-All rights reserved. No copying or commercial use without the owner's prior written permission. See [LICENSE](LICENSE).
+Open core under [Apache-2.0](LICENSE). Commercial operator layers are licensed separately under [LICENSE-COMMERCIAL](LICENSE-COMMERCIAL). The boundary is documented in [reference/licensing.md](docs/reference/licensing.md). Contributions require DCO sign-off.

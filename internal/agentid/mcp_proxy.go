@@ -11,14 +11,19 @@ import (
 // before the server sees them. Allowed calls are annotated with a receipt id
 // on the way back.
 type MCPProxy struct {
-	wrapper *MCPWrapper
-	mu      sync.Mutex
-	pending map[string]string
+	wrapper        *MCPWrapper
+	mu             sync.Mutex
+	pending        map[string]string
+	shadowVerdicts map[string]string
 }
 
 // NewMCPProxy creates a stdio/Streamable-HTTP transport proxy.
 func NewMCPProxy(wrapper *MCPWrapper) *MCPProxy {
-	return &MCPProxy{wrapper: wrapper, pending: map[string]string{}}
+	return &MCPProxy{
+		wrapper:        wrapper,
+		pending:        map[string]string{},
+		shadowVerdicts: map[string]string{},
+	}
 }
 
 // ProcessClient handles a client line. forward=true means write it to the
@@ -33,17 +38,37 @@ func (p *MCPProxy) ProcessClient(ctx context.Context, line []byte) (bool, []byte
 		return true, nil
 	}
 	response := p.wrapper.HandleRPC(ctx, request)
+	receiptID := receiptIDFromRPC(response)
+	key := requestIDKey(request["id"])
+	if p.wrapper.config.Mode == OperatorModeShadow {
+		verdict := "allow"
+		if AsMap(response["error"]) != nil {
+			verdict = "deny"
+		}
+		if receiptID != "" {
+			p.mu.Lock()
+			p.pending[key] = receiptID
+			p.shadowVerdicts[key] = verdict
+			p.mu.Unlock()
+		}
+		return true, nil
+	}
 	if AsMap(response["error"]) != nil {
 		return false, mustJSON(response)
 	}
-	receiptID := stringField(AsMap(AsMap(response["result"])["_meta"]), "receipt_id")
 	if receiptID != "" {
-		key := requestIDKey(request["id"])
 		p.mu.Lock()
 		p.pending[key] = receiptID
 		p.mu.Unlock()
 	}
 	return true, nil
+}
+
+func receiptIDFromRPC(response map[string]any) string {
+	if errObj := AsMap(response["error"]); errObj != nil {
+		return stringField(AsMap(errObj["data"]), "receipt_id")
+	}
+	return stringField(AsMap(AsMap(response["result"])["_meta"]), "receipt_id")
 }
 
 // ProcessServerResponse annotates a server reply for an allowed call.
@@ -56,8 +81,12 @@ func (p *MCPProxy) ProcessServerResponse(line []byte) ([]byte, error) {
 	key := requestIDKey(object["id"])
 	p.mu.Lock()
 	receiptID, ok := p.pending[key]
+	shadowVerdict, shadowed := p.shadowVerdicts[key]
 	if ok {
 		delete(p.pending, key)
+	}
+	if shadowed {
+		delete(p.shadowVerdicts, key)
 	}
 	p.mu.Unlock()
 	if !ok {
@@ -72,6 +101,12 @@ func (p *MCPProxy) ProcessServerResponse(line []byte) ([]byte, error) {
 		meta = map[string]any{}
 	}
 	meta["receipt_id"] = receiptID
+	if shadowed {
+		meta["agentid_shadow"] = map[string]any{
+			"receipt_id": receiptID,
+			"verdict":    shadowVerdict,
+		}
+	}
 	result["_meta"] = meta
 	object["result"] = result
 	return mustJSON(object), nil

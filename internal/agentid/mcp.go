@@ -36,6 +36,7 @@ type ToolMapping struct {
 
 // MCPWrapperConfig supplies the evidence and policy inputs to the wrapper.
 type MCPWrapperConfig struct {
+	Mode             string
 	Tools            []ToolMapping
 	Chain            []Delegation
 	Profile          Profile
@@ -357,6 +358,7 @@ func MCPRequestJSON(id int, tool string, arguments map[string]any) []byte {
 // MCPConfigFile is the on-disk configuration. Credentials are referenced by
 // environment-variable name only; no secret is ever stored in this file.
 type MCPConfigFile struct {
+	Mode        string        `json:"mode"`
 	Tools       []ToolMapping `json:"tools"`
 	Delegations string        `json:"delegations"`
 	Profile     string        `json:"profile"`
@@ -385,7 +387,14 @@ func LoadMCPWrapper(path string) (*MCPWrapper, error) {
 	if err := json.Unmarshal(data, &file); err != nil {
 		return nil, err
 	}
-	config := MCPWrapperConfig{Tools: file.Tools, Fleet: file.Fleet}
+	mode := file.Mode
+	if mode == "" {
+		mode = OperatorModeEnforce
+	}
+	if mode != OperatorModeEnforce && mode != OperatorModeShadow {
+		return nil, errors.New("mode must be enforce or shadow")
+	}
+	config := MCPWrapperConfig{Mode: mode, Tools: file.Tools, Fleet: file.Fleet}
 
 	delegationData, err := os.ReadFile(file.Delegations)
 	if err != nil {

@@ -2,6 +2,7 @@ package agentid
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -12,6 +13,38 @@ func runCLI(t *testing.T, args ...string) (string, string, int) {
 	var out, errOut bytes.Buffer
 	code := Run(args, &out, &errOut)
 	return out.String(), errOut.String(), code
+}
+
+func TestCLIVersionUsesBuildVersion(t *testing.T) {
+	old := BuildVersion
+	BuildVersion = "v9.9.9-test"
+	defer func() { BuildVersion = old }()
+
+	out, _, code := runCLI(t, "version")
+	if code != 0 {
+		t.Fatalf("version exit %d: %s", code, out)
+	}
+	if !strings.Contains(out, "v9.9.9-test") {
+		t.Fatalf("version did not use BuildVersion: %s", out)
+	}
+}
+
+func TestCLIOperatorConfigCommands(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "agentid.json")
+	body := `{"version":"v1","mode":"shadow","tools":[{"name":"purchase","action":"ad.credit.purchase","system":"meta-ads","resource_type":"ad_credit_account","allowed_args":["amount"]}]}`
+	if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	out, _, code := runCLI(t, "config", "check", "--config", path)
+	if code != 0 || !strings.Contains(out, "VALID") {
+		t.Fatalf("config check failed: %d %s", code, out)
+	}
+
+	out, _, code = runCLI(t, "health", "--config", path)
+	if code != 0 || !strings.Contains(out, `"mode":"shadow"`) {
+		t.Fatalf("health failed: %d %s", code, out)
+	}
 }
 
 func TestCLICommands(t *testing.T) {

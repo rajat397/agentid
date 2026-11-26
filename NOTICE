@@ -1,0 +1,7 @@
+agentid
+Copyright 2026 Rajat Srivastava
+
+This product includes software developed as the agentid reference implementation.
+
+The open core is licensed under the Apache License, Version 2.0. See LICENSE.
+Commercial operator layers, when shipped as separate modules or services, are licensed under LICENSE-COMMERCIAL.

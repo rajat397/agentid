@@ -123,6 +123,30 @@ func TestMCPProxyPassesThroughNonToolAndMalformed(t *testing.T) {
 	}
 }
 
+func TestMCPProxyShadowForwardsDeniedCallAndAnnotatesVerdict(t *testing.T) {
+	wrapper := proxyTestWrapper(t, false)
+	wrapper.config.Mode = OperatorModeShadow
+	proxy := NewMCPProxy(wrapper)
+	forward, response := proxy.ProcessClient(context.Background(), proxyCall(t, "5000.00"))
+	if !forward || response != nil {
+		t.Fatalf("shadow call was not forwarded: forward=%v response=%s", forward, response)
+	}
+	serverResponse := []byte(`{"jsonrpc":"2.0","id":7,"result":{"content":[{"type":"text","text":"ok"}]}}`)
+	out, err := proxy.ProcessServerResponse(serverResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(out, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	meta := AsMap(AsMap(decoded["result"])["_meta"])
+	shadow := AsMap(meta["agentid_shadow"])
+	if stringField(shadow, "verdict") != "deny" || stringField(shadow, "receipt_id") == "" {
+		t.Fatalf("shadow verdict not annotated: %s", out)
+	}
+}
+
 func TestMCPProxyRaisesApprovalRequest(t *testing.T) {
 	proxy := NewMCPProxy(proxyTestWrapper(t, true))
 	forward, response := proxy.ProcessClient(context.Background(), proxyCall(t, "1500.00"))

@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "mode": "enforce",
+  "tools": [
+    {
+      "name": "purchase_ad_credit",
+      "action": "ad.credit.purchase",
+      "system": "meta-ads",
+      "resource_type": "ad_credit_account",
+      "allowed_args": ["amount", "currency"]
+    }
+  ],
+  "delegations": "delegations.jsonl",
+  "profile": "spec/validation-profile.example.json",
+  "root_key": "keys/root.pem",
+  "signer_key": "keys/signer.pem"
+}
