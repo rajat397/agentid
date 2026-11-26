@@ -15,8 +15,8 @@ Include:
 - any relevant logs or evidence redacted of real third-party secrets.
 
 You will receive an acknowledgement within 7 days. There is no bug bounty at
-this stage — this is an open-source reference implementation without funding —
-but you will receive credit for a confirmed, responsibly disclosed report.
+this stage, but you will receive credit for a confirmed, responsibly disclosed
+report.
 
 ## What is in scope
 
@@ -26,10 +26,9 @@ but you will receive credit for a confirmed, responsibly disclosed report.
 
 ## What is not in scope
 
-- Issues that are inherent to the design of an experimental reference
-  implementation and are listed as such in `docs/architecture/overview.md`
-  (e.g. "this is not tamper-proof", "not certified", "injection prevention is
-  out of layer").
+- Issues that are documented limitations of the open-core early-access product
+  and are listed as such in `docs/architecture/overview.md`
+  (e.g. "this is not tamper-proof", "injection prevention is out of layer").
 - Third-party standards and their correctness. Those belong to their
   respective bodies (NIST, IETF, OTel). If you find an error in our
   *description* of a standard, that is in scope; if you find an error in the

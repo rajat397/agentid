@@ -1,14 +1,12 @@
+//go:build enterprise
+// SPDX-License-Identifier: LicenseRef-agentid-commercial
+
 package agentid
 
 import (
 	"encoding/json"
 	"errors"
 	"os"
-)
-
-const (
-	OperatorModeEnforce = "enforce"
-	OperatorModeShadow  = "shadow"
 )
 
 var authorityArgumentNames = map[string]bool{
@@ -51,6 +49,12 @@ func LoadOperatorConfig(path string) (*OperatorConfig, error) {
 
 // Validate checks the shipped contract without reading referenced artifacts.
 func (c *OperatorConfig) Validate() error {
+	if c.Version == "" {
+		c.Version = "v1"
+	}
+	if c.Version != "v1" {
+		return errors.New("unsupported config version: " + c.Version)
+	}
 	if c.Mode == "" {
 		c.Mode = OperatorModeEnforce
 	}

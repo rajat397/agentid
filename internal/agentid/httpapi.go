@@ -41,8 +41,18 @@ func InferKeyInfo(kid, material string) KeyInfo {
 
 // NewVerificationHandler mounts /receipts/verify and /v1/keys on caller-owned
 // infrastructure. It performs no outbound network calls.
-func NewVerificationHandler(keys map[string]string) http.Handler {
+func NewVerificationHandler(keys map[string]string, metrics ...*Metrics) http.Handler {
 	mux := http.NewServeMux()
+	if len(metrics) > 0 && metrics[0] != nil {
+		mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			w.Header().Set("Content-Type", "text/plain; version=0.0.4")
+			_, _ = w.Write(metrics[0].Render())
+		})
+	}
 	mux.HandleFunc("/v1/keys", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

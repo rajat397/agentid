@@ -1,3 +1,6 @@
+//go:build enterprise
+// SPDX-License-Identifier: LicenseRef-agentid-commercial
+
 package agentid
 
 import (
@@ -75,19 +78,3 @@ func TestKeyRotatePublishesOverlap(t *testing.T) {
 	}
 }
 
-func TestCLILocalKeyLifecycle(t *testing.T) {
-	dir := filepath.Join(t.TempDir(), "keys")
-	out, _, code := runCLI(t, "key", "generate", "--dir", dir, "--kid", "cli-one")
-	if code != 0 || !strings.Contains(out, "cli-one") {
-		t.Fatalf("key generate failed: %d %s", code, out)
-	}
-	out, _, code = runCLI(t, "key", "rotate", "--dir", dir, "--kid", "cli-two")
-	if code != 0 || !strings.Contains(out, "cli-two") {
-		t.Fatalf("key rotate failed: %d %s", code, out)
-	}
-	published := filepath.Join(t.TempDir(), "keys.json")
-	out, _, code = runCLI(t, "key", "publish", "--dir", dir, "--out", published)
-	if code != 0 || !strings.Contains(out, "wrote") {
-		t.Fatalf("key publish failed: %d %s", code, out)
-	}
-}

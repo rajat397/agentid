@@ -2,7 +2,7 @@
 
 **An agent acted. Prove who authorized it.**
 
-> Status: experimental reference implementation. Not production-ready, not certified, not for sale. All rights reserved.
+> Status: open-core early access. Apache-2.0 interface; commercial operator layer by contact.
 
 `agentid` makes a consequential agent action re-derivable instead of merely logged. It binds a signed, narrow envelope to a tool call, gates execution at a credential-holding enforcement point, and emits receipts an auditor can verify offline without trusting a hosted service.
 
@@ -75,25 +75,23 @@ The agent sees ordinary JSON-RPC tools. The wrapper holds downstream credentials
 ```bash
 # Inspect and verify
 go run ./cmd/agentid profile
-go run ./cmd/agentid config check --config spec/operator-config.example.json
-go run ./cmd/agentid health --config spec/operator-config.example.json
 go run ./cmd/agentid evidence export --demo --out bundle.json
 go run ./cmd/agentid evidence verify --file bundle.json
 go run ./cmd/agentid verify-signed --artifact <file>
 
 # Lifecycle and operations
-go run ./cmd/agentid key generate --dir keys --kid kid-one
-go run ./cmd/agentid key rotate --dir keys --kid kid-two
-go run ./cmd/agentid key publish --dir keys --out public-keys.json
 go run ./cmd/agentid demo
 go run ./cmd/agentid erasure cust_4471 --demo
 go run ./cmd/agentid anchor --ledger <receipts.jsonl> [--tsa URL]
 go run ./cmd/agentid serve --bundle bundle.json --addr 127.0.0.1:8080
+curl http://127.0.0.1:8080/metrics
 
 # Adapters
 go run ./cmd/agentid wrap --config <profile> -- <mcp-server>
 go run ./cmd/agentid claude-hook
 ```
+
+The commercial operator build adds `config`, `health` and `key` commands with `-tags enterprise`. See [reference/licensing.md](docs/reference/licensing.md).
 
 ## Adapters
 
@@ -127,7 +125,10 @@ go run ./cmd/agentid claude-hook
 | [reference/hardening.md](docs/reference/hardening.md) | Read coverage gaps and unresolved verification limits |
 | [reference/operator-config.md](docs/reference/operator-config.md) | Validate JSON config, health and shadow mode |
 | [reference/key-lifecycle.md](docs/reference/key-lifecycle.md) | Generate, rotate and publish local signer keys |
+| [reference/observability.md](docs/reference/observability.md) | Metrics, alert templates and PEP latency measurement |
 | [reference/install.md](docs/reference/install.md) | Verify and install signed release binaries |
+| [reference/releases.md](docs/reference/releases.md) | Semver, release checklist and security release process |
+| [UPGRADING.md](UPGRADING.md) | Compatibility matrix, upgrade and rollback procedure |
 
 ## Evidence, not adjectives
 
@@ -147,4 +148,4 @@ Not tamper-proof storage: receipts are tamper-evident. Not a certified product. 
 
 ## License
 
-Open core under [Apache-2.0](LICENSE). Commercial operator layers are licensed separately under [LICENSE-COMMERCIAL](LICENSE-COMMERCIAL). The boundary is documented in [reference/licensing.md](docs/reference/licensing.md). Contributions require DCO sign-off.
+Default build is Apache-2.0 open core. Enterprise-tagged operator files are under [LICENSE-COMMERCIAL](LICENSE-COMMERCIAL). The boundary is documented in [reference/licensing.md](docs/reference/licensing.md). Contributions require DCO sign-off.

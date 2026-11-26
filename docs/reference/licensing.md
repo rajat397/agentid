@@ -1,6 +1,6 @@
 # Licensing and open-core boundary
 
-`agentid` uses an open-core model.
+`agentid` uses a Stripe-style boundary: the interface layer is permissive and inspectable; the operator layer is commercial source-not-available.
 
 ## Open core: Apache-2.0
 
@@ -16,22 +16,22 @@ The following are licensed under [Apache-2.0](../../LICENSE):
 
 Reason: platform engineers and security reviewers need to inspect the verifier, receipt format and enforcement path before they will wire a live tool call. A permissive license supports that trust and the product-led motion.
 
-Some operator-layer features already present in this repository, including the embedded control plane, anchoring, erasure, retention, OTel reconciliation and registry helpers, remain Apache-2.0 for now. They are grandfathered into the open core to avoid retroactively changing the terms under which contributors and early users received them. Their commercial successors will be separate modules.
+The default build (`go test ./...`, `go build ./cmd/agentid`) contains only Apache-2.0 code. The interface layer includes the receipt format, verifier, envelope, validator, delegation primitives, evidence bundle, MCP proxy, adapter contracts and the CLI commands needed to inspect and verify locally.
 
 ## Commercial layer: separate license
 
-Modules, binaries or services explicitly marked Commercial, Enterprise, Regulated or OEM are licensed under [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL). The commercial layer is for operator burden, not for the verifier:
+Files marked `// SPDX-License-Identifier: LicenseRef-agentid-commercial` and included only by the Go build tag `enterprise` are licensed under [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL). They are for operator burden, not for the verifier:
 
+- operator config validation and health commands;
+- local key lifecycle, rotation and public-key publishing commands;
 - hosted or managed control plane and policy distribution;
-- key lifecycle service, KMS/HSM adapters and rotation automation;
+- KMS/HSM adapters and rotation automation;
 - anchor management service, dashboards and gap alerting;
 - erasure and retention connectors for real downstream systems;
 - audit export, evidence directory and signer-key directory;
-- observability pack, alert templates and reconciliation dashboards;
-- OEM/embedded licensing for gateways and platforms;
-- certified release channels and support.
+- reconciliation dashboards, OEM/embedded licensing, certified channels and support.
 
-None of these commercial artifacts are shipped in this repository today. Do not treat planned features as licensed or available.
+Build with `-tags enterprise` only under a commercial license. The default binary does not contain these commands.
 
 ## Contributions
 

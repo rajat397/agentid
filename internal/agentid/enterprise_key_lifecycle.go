@@ -1,3 +1,6 @@
+//go:build enterprise
+// SPDX-License-Identifier: LicenseRef-agentid-commercial
+
 package agentid
 
 import (

@@ -1,5 +1,7 @@
 # Local key lifecycle
 
+**Status:** commercial operator layer. Key commands are available only in the `enterprise` build.
+
 Tier 2 allows hardened local keys with rotation. KMS/HSM adapters are recommended and required for Tier 3.
 
 ## Directory layout

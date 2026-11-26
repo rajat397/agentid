@@ -1,5 +1,7 @@
 # Operator config
 
+**Status:** commercial operator layer. The `config` and `health` commands are available only in the `enterprise` build.
+
 The operator config is JSON. It is validated before deployment and used by CLI commands that wrap a tool path.
 
 ## Example

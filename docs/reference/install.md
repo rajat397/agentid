@@ -37,6 +37,35 @@ chmod +x "${NAME}"
 
 Supported initial targets: `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`.
 
+## Container image
+
+Container images are published to `ghcr.io/rajat397/agentid` on each release tag. Verify by digest, not by mutable tag:
+
+```bash
+VERSION=v1.2.3
+IMAGE="ghcr.io/rajat397/agentid:${VERSION}"
+docker pull "${IMAGE}"
+DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "${IMAGE}")"
+
+cosign verify "${DIGEST}" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp "^https://github.com/rajat397/agentid/.github/workflows/release.yml@refs/tags/${VERSION}$"
+
+docker run --rm "${DIGEST}" version
+```
+
+Deploy the digest you verified. Tags are convenience only.
+
+## Convenience installer
+
+With `cosign` installed, the installer verifies the signed checksum manifest before installing the binary:
+
+```bash
+AGENTID_VERSION=v1.2.3 INSTALL_DIR="$HOME/.agentid/bin" bash scripts/install.sh
+```
+
+Set `AGENTID_OS` and `AGENTID_ARCH` to override detection. Set `AGENTID_RELEASE_BASE` only for mirrors or local testing; the default is the GitHub release for the chosen tag.
+
 ## Build locally
 
 ```bash

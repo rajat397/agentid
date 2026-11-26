@@ -14,6 +14,7 @@ import (
 
 	"encoding/base64"
 	"strings"
+	"time"
 )
 
 // ToolMapping is operator-owned configuration. Authority fields come from the
@@ -37,6 +38,7 @@ type ToolMapping struct {
 // MCPWrapperConfig supplies the evidence and policy inputs to the wrapper.
 type MCPWrapperConfig struct {
 	Mode             string
+	Metrics          *Metrics
 	Tools            []ToolMapping
 	Chain            []Delegation
 	Profile          Profile
@@ -55,6 +57,7 @@ type MCPWrapperConfig struct {
 // MCPWrapper is the policy enforcement point for an MCP tool surface.
 type MCPWrapper struct {
 	config       MCPWrapperConfig
+	metrics      *Metrics
 	ledger       *Ledger
 	statusLookup func(uri string, idx int) (int, error)
 	httpClient   *http.Client
@@ -75,7 +78,7 @@ func NewMCPWrapper(config MCPWrapperConfig) (*MCPWrapper, error) {
 	if ledger == nil {
 		ledger = &Ledger{}
 	}
-	wrapper := &MCPWrapper{config: config, ledger: ledger,
+	wrapper := &MCPWrapper{config: config, metrics: config.Metrics, ledger: ledger,
 		httpClient: &http.Client{}}
 	if config.StatusToken != "" {
 		if len(config.StatusKeys) == 0 {
@@ -116,7 +119,19 @@ func checkStatusAtIssuedTime(token string, idx int, keys map[string]string, maxA
 
 // HandleRPC handles one JSON-RPC 2.0 request. Only tools/call reaches the
 // downstream service; tools/list advertises names without credentials.
-func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[string]any {
+func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) (response map[string]any) {
+	started := time.Now()
+	defer func() {
+		if w.metrics == nil {
+			return
+		}
+		outcome := "allow"
+		if AsMap(response["error"]) != nil {
+			outcome = "deny"
+		}
+		w.metrics.RecordDecision(outcome)
+		w.metrics.RecordLatency(time.Since(started))
+	}()
 	id := request["id"]
 	method := stringField(request, "method")
 	if method != "tools/call" && method != "tools/list" {
@@ -144,6 +159,7 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 	if provider := w.policyProvider(); provider != nil {
 		resolved, err := provider()
 		if err != nil {
+			w.recordVerificationFailure()
 			return rpcError(id, -32000, "policy unavailable: "+err.Error(), "")
 		}
 		policy = resolved
@@ -169,6 +185,7 @@ func (w *MCPWrapper) HandleRPC(ctx context.Context, request map[string]any) map[
 			Trace:        w.config.Trace,
 		})
 	if err != nil {
+		w.recordVerificationFailure()
 		return rpcError(id, -32000, "receipt failed: "+err.Error(), "")
 	}
 	receipt := w.ledger.Receipts[len(w.ledger.Receipts)-1]

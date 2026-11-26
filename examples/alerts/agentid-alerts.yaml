@@ -1,0 +1,47 @@
+groups:
+  - name: agentid
+    rules:
+      - alert: AgentIDVerificationFailures
+        expr: increase(agentid_verification_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: agentid verification failed
+          description: A decision could not be verified from receipts and keys.
+
+      - alert: AgentIDStatusTokenStale
+        expr: agentid_status_age_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: agentid status token is stale
+          description: Revocation freshness is outside the five minute starting bound.
+
+      - alert: AgentIDAnchorGap
+        expr: agentid_anchor_gaps > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: agentid anchor gap detected
+          description: One or more reporting days lack an anchor stamp.
+
+      - alert: AgentIDAdapterUnhealthy
+        expr: agentid_adapter_healthy == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: agentid adapter is unhealthy
+          description: A harness adapter has failed its health check.
+
+      - alert: AgentIDPEPLatencyHigh
+        expr: rate(agentid_pep_latency_seconds_sum[5m]) / clamp_min(rate(agentid_pep_latency_seconds_count[5m]), 0.001) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: agentid PEP latency above starting bound
+          description: Decision overhead p95 needs pilot measurement before this threshold is finalized.

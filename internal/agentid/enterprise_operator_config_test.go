@@ -1,3 +1,6 @@
+//go:build enterprise
+// SPDX-License-Identifier: LicenseRef-agentid-commercial
+
 package agentid
 
 import (
@@ -27,6 +30,17 @@ func TestOperatorConfigValid(t *testing.T) {
 	}
 	if config.Mode != OperatorModeEnforce {
 		t.Fatalf("mode = %q", config.Mode)
+	}
+}
+
+func TestOperatorConfigMigratesLegacyDefaults(t *testing.T) {
+	path := writeOperatorConfig(t, `{"tools":[{"name":"purchase","action":"a","system":"s","resource_type":"r"}]}`)
+	config, err := LoadOperatorConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.Version != "v1" || config.Mode != OperatorModeEnforce {
+		t.Fatalf("legacy config did not normalize: version=%q mode=%q", config.Version, config.Mode)
 	}
 }
 
