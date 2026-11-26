@@ -7,6 +7,24 @@ import (
 	"testing"
 )
 
+func TestPagesWorkflowWaitsForArtifact(t *testing.T) {
+	data, err := os.ReadFile("../../.github/workflows/pages.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"actions: read",
+		"upload-pages-artifact@v3",
+		"Wait for Pages artifact metadata",
+		"/actions/runs/${GITHUB_RUN_ID}/artifacts",
+		"deploy-pages@v4",
+	} {
+		if !strings.Contains(string(data), want) {
+			t.Fatalf("pages workflow missing %q", want)
+		}
+	}
+}
+
 func TestReleaseDocsContract(t *testing.T) {
 	files := map[string][]string{
 		"../../UPGRADING.md": {
